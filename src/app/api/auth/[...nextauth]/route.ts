@@ -1,3 +1,4 @@
+// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions, Session, User } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -14,7 +15,7 @@ interface ExtendedJWT extends JWT {
   };
 }
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -40,18 +41,14 @@ export const authOptions: NextAuthOptions = {
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
-          // Incrementar intentos fallidos
           user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
           if (user.failedLoginAttempts >= 3) {
             user.isLocked = true;
-            // Aquí podrías disparar el envío del correo de desbloqueo automáticamente
-            // Por simplicidad, lo haremos en un endpoint separado
           }
           await user.save();
           throw new Error('Email o contraseña inválidos');
         }
 
-        // Reiniciar intentos fallidos tras un inicio de sesión exitoso
         user.failedLoginAttempts = 0;
         await user.save();
 
