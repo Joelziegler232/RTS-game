@@ -1,0 +1,94 @@
+/* Importa los estilos base y utilidades de Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Define la fuente Inter */
+@font-face {
+  font-family: 'Inter';
+  src: url('/path/to/inter.woff2') format('woff2');
+  /* Agrega aquí otras fuentes o formatos si es necesario */
+}
+
+/* Define las variables de color dependiendo del esquema de color */
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+.cursor-indicator {
+  position: absolute;
+  pointer-events: none;
+}
+
+.custom-shape {
+  position: absolute;
+  width: 5rem; /* 20 * 4 = 80px */
+  height: 5rem; /* 20 * 4 = 80px */
+  background-color: #38a169; /* bg-green-500 */
+  transform: rotate(38deg) skewX(-15deg);
+  z-index: 10;
+  margin-top: 0.75rem; /* mt-3 equivalent */
+}
+
+/* Estilos generales del cuerpo del documento */
+body {
+  font-family: 'Inter', sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+/* Estilos de utilidades personalizadas */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Estilos de componentes personalizados */
+@layer components {
+  /* Estilos del icono de la barra lateral */
+  .sidebar-icon {
+    @apply relative flex items-center justify-center h-12 w-24 mt-5 mb-2 mx-auto;
+    @apply hover:bg-gray-400 rounded-3xl hover:rounded-xl;
+    @apply transition-all duration-150 ease-linear cursor-pointer;
+  }
+  
+  /* Estilos del nombre de la barra lateral */
+  .sidebar-name {
+    @apply absolute w-auto p-2 m-2 min-w-max left-14 rounded-md shadow-md;
+    @apply text-white bg-gray-900 text-xs font-bold;
+    @apply transition-all duration-100 scale-0 origin-left;
+  }
+  
+  /* Estilos del requisito mínimo de nivel */
+  .min-lev-req {
+    @apply relative flex items-center justify-center h-12 w-24 mt-5 mb-2 mx-auto;
+  }
+
+  /* Estilos del detalle mostrado */
+  .show-detail {
+    @apply absolute w-auto p-2 m-2 min-w-max rounded-md shadow-md
+    text-white bg-gray-900 text-xs font-bold;
+  }
+  
+  /* Estilos del menú del ayuntamiento */
+  .ayuntamiento-menu {
+    @apply absolute flex flex-col top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+    p-2 m-2 w-[300px] justify-center items-center rounded-md shadow-md text-white bg-gray-900 text-sm font-bold;
+  }
+
+}

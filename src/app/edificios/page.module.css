@@ -1,0 +1,35 @@
+/* src/app/edificios/page.module.css */
+.main {
+    position: relative;
+  }
+  
+  .signOutButton {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+  }
+  
+  .uiContainer {
+    /* Estilos de Container ya están manejados por MUI */
+  }
+  
+  .moneyWrapper {
+    position: relative;
+  }
+  
+  .moneyDisplay {
+    position: absolute;
+    bottom: 100%;
+    left: 15%;
+    transform: translateX(-100%) translateY(200%);
+    background-color: #3b82f6; /* bg-blue-500 */
+    color: white;
+    border-radius: 8px;
+    padding: 8px;
+  }
+  
+  .buildButtonWrapper {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+  }
