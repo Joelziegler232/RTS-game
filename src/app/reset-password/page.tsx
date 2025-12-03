@@ -1,5 +1,6 @@
 // src/app/reset-password/page.tsx
 "use client";
+
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -13,9 +14,7 @@ export default function ResetPassword() {
   const token = searchParams.get("token");
 
   useEffect(() => {
-    if (!token) {
-      setError("Token inválido o faltante");
-    }
+    if (!token) setError("Token inválido o faltante");
   }, [token]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -35,9 +34,9 @@ export default function ResetPassword() {
         body: JSON.stringify({ token, password }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Error al restablecer la contraseña");
-      }
+
+      if (!response.ok) throw new Error(data.error || "Error al restablecer la contraseña");
+
       setMessage("Contraseña restablecida con éxito. Redirigiendo al inicio de sesión...");
       setTimeout(() => router.push("/login"), 3000);
     } catch (err: any) {
@@ -54,14 +53,16 @@ export default function ResetPassword() {
     <main className="container mx-auto flex flex-col justify-center items-center min-h-screen bg-black">
       <h2 className="text-3xl font-bold mb-6 text-blue-500">Restablecer Contraseña</h2>
       <div className="flex justify-center items-center w-full max-w-md">
-        <form onSubmit={handleSubmit} className="w-full max-w-md bg-gray-800 border border-gray-700 p-4 flex flex-col justify-center items-center">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-md bg-gray-800 border border-gray-700 p-4 flex flex-col justify-center items-center"
+        >
           <div className="w-full mb-4">
             <label htmlFor="password" className="text-white mb-1 block">Nueva Contraseña</label>
             <input
               type="password"
               id="password"
               placeholder="Nueva Contraseña"
-              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -74,7 +75,6 @@ export default function ResetPassword() {
               type="password"
               id="confirmPassword"
               placeholder="Confirmar Contraseña"
-              name="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required

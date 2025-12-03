@@ -1,4 +1,6 @@
+// src/app/unlock/page.tsx
 "use client";
+
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -10,9 +12,7 @@ export default function UnlockAccount() {
   const token = searchParams.get("token");
 
   useEffect(() => {
-    if (!token) {
-      setError("Token inválido o faltante");
-    }
+    if (!token) setError("Token inválido o faltante");
   }, [token]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -27,9 +27,9 @@ export default function UnlockAccount() {
         body: JSON.stringify({ token }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Error al desbloquear la cuenta");
-      }
+
+      if (!response.ok) throw new Error(data.error || "Error al desbloquear la cuenta");
+
       setMessage("Cuenta desbloqueada con éxito. Redirigiendo al inicio de sesión...");
       setTimeout(() => router.push("/login"), 3000);
     } catch (err: any) {
@@ -46,7 +46,10 @@ export default function UnlockAccount() {
     <main className="container mx-auto flex flex-col justify-center items-center min-h-screen bg-black">
       <h2 className="text-3xl font-bold mb-6 text-blue-500">Desbloquear Cuenta</h2>
       <div className="flex justify-center items-center w-full max-w-md">
-        <form onSubmit={handleSubmit} className="w-full max-w-md bg-gray-800 border border-gray-700 p-4 flex flex-col justify-center items-center">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-md bg-gray-800 border border-gray-700 p-4 flex flex-col justify-center items-center"
+        >
           <p className="text-white mb-4">Haz clic en el botón para desbloquear tu cuenta.</p>
           <button
             type="submit"
