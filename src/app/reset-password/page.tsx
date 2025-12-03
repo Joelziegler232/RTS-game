@@ -1,28 +1,36 @@
-// src/app/reset-password/page.tsx
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function ResetPassword() {
+  const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [token, setToken] = useState<string | null>(null);
 
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  setToken(params.get("token"));
-}, []);
-
+  // Obtener token solo en cliente
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("token");
+    if (!t) {
+      setError("Token inválido o faltante");
+    } else {
+      setToken(t);
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
     setError(null);
+
+    if (!token) {
+      setError("Token inválido o faltante");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden");

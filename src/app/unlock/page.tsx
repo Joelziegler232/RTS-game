@@ -1,26 +1,34 @@
-// src/app/unlock/page.tsx
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function UnlockAccount() {
+  const [token, setToken] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
- const [token, setToken] = useState<string | null>(null);
 
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  setToken(params.get("token"));
-}, []);
-
+  // Obtener token solo en cliente
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("token");
+    if (!t) {
+      setError("Token inválido o faltante");
+    } else {
+      setToken(t);
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
     setError(null);
+
+    if (!token) {
+      setError("Token inválido o faltante");
+      return;
+    }
 
     try {
       const response = await fetch("/api/auth/unlock", {
