@@ -9,11 +9,13 @@ export default function UnlockAccount() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+ const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!token) setError("Token inválido o faltante");
-  }, [token]);
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  setToken(params.get("token"));
+}, []);
+
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
