@@ -7,48 +7,51 @@ const UserSchema = new Schema({
     minlength: [3, "El nombre completo debe tener al menos 3 caracteres"],
     maxlength: [50, "El nombre completo debe tener como máximo 50 caracteres"],
   },
+
   email: {
     type: String,
     required: [true, "El correo electrónico es obligatorio"],
     unique: true,
     match: [/.+@.+\..+/, "El correo electrónico no es válido"],
   },
+
   password: {
     type: String,
     required: [true, "La contraseña es obligatoria"],
     select: false,
   },
+
   profilePicture: {
     type: String,
     default: null,
   },
+
   level: {
     type: Number,
     default: 1,
   },
-  obreros: {
-    type: Number,
-    default: 3,
-  },
+
   failedLoginAttempts: {
     type: Number,
-    default: 0, // Contador de intentos fallidos
+    default: 0,
   },
+
   isLocked: {
     type: Boolean,
-    default: false, // Indica si la cuenta está bloqueada
+    default: false,
   },
+
   unlockToken: {
     type: String,
-    default: null, // Token para desbloqueo
+    default: null,
   },
+
   unlockTokenExpires: {
     type: Date,
-    default: null, // Fecha de expiración del token
+    default: null,
   },
-}, {
-  timestamps: true,
-});
+
+}, { timestamps: true });
 
 const User = models.User || model("User", UserSchema);
 export default User;

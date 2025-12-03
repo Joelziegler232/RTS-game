@@ -1,4 +1,4 @@
-// src/app/generadores/objects/Units.ts
+
 export default interface Units {
   id: number;
   name: string;
@@ -7,5 +7,5 @@ export default interface Units {
   incrementador_time: number;
   level: number;
   desbloqueo: number;
-  position?: { x: number; y: number }; // Añadimos posición en coordenadas de grilla
+  position?: { x: number; y: number }; 
 }

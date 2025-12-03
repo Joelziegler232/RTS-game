@@ -2,9 +2,18 @@
 import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema({
-  sender: {
+  senderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  senderName: {
     type: String,
     required: true,
+  },
+  senderPicture: {
+    type: String,
+    default: null,
   },
   content: {
     type: String,
@@ -15,6 +24,6 @@ const messageSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
 
+const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
 export default Message;

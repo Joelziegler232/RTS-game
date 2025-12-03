@@ -1,44 +1,45 @@
-// src/app/components/MapViewer.tsx
 import React, { useState, useEffect } from "react";
-import { fetchMaps, createMap } from "../../services/mapService";
+import { useSession } from "next-auth/react";
 
 const MapViewer: React.FC = () => {
-  const [maps, setMaps] = useState<any[]>([]);
-  const [selectedMap, setSelectedMap] = useState<any | null>(null);
+  const { data: session, status } = useSession();
+  const [map, setMap] = useState<string[][] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadMaps = async () => {
-      const data = await fetchMaps();
-      setMaps(data);
+    const loadUserMap = async () => {
+      if (status === "authenticated" && session?.user?.id) {
+        try {
+          console.log("Cargando mapa para userId:", session.user.id);
+          const response = await fetch(`/api/user_instance/${session.user.id}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch user instance: ${response.statusText}`);
+          }
+          const userInstance = await response.json();
+          console.log("Mapa recibido:", userInstance.map.grid[0]); // Log para depurar
+          if (userInstance.map && userInstance.map.grid) {
+            setMap(userInstance.map.grid);
+          } else {
+            setError("No se encontró el mapa del usuario");
+          }
+        } catch (error: any) {
+          console.error("Error loading user map:", error);
+          setError(error.message || "Error al cargar el mapa");
+        }
+      }
     };
-    loadMaps();
-  }, []);
-
-  const handleGenerateMap = async () => {
-    const newMap = await createMap();
-    setMaps([newMap, ...maps]);
-    setSelectedMap(newMap);
-  };
+    loadUserMap();
+  }, [status, session]);
 
   return (
     <div>
       <h1>Map Viewer</h1>
-      <button onClick={handleGenerateMap}>Generate New Map</button>
-      <div>
-        <h2>Available Maps</h2>
-        <ul>
-          {maps.map((map, index) => (
-            <li key={index} onClick={() => setSelectedMap(map)}>
-              Map {index + 1} (Created: {new Date(map.createdAt).toLocaleString()})
-            </li>
-          ))}
-        </ul>
-      </div>
-      {selectedMap && (
+      {error && <p className="text-red-500">{error}</p>}
+      {map ? (
         <div>
-          <h2>Selected Map</h2>
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${selectedMap.grid.length}, 20px)` }}>
-            {selectedMap.grid.flat().map((cell: string, index: number) => (
+          <h2>Your Map</h2>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${map.length}, 20px)` }}>
+            {map.flat().map((cell: string, index: number) => (
               <div
                 key={index}
                 style={{
@@ -48,12 +49,17 @@ const MapViewer: React.FC = () => {
                     cell === "water" ? "blue" :
                     cell === "plains" ? "green" :
                     cell === "forest" ? "darkgreen" :
-                    "gray",
+                    cell === "mountain" ? "gray" :
+                    cell === "tree" ? "brown" :
+                    cell === "palm" ? "lightgreen" :
+                    "black",
                 }}
               ></div>
             ))}
           </div>
         </div>
+      ) : (
+        <p>Loading map...</p>
       )}
     </div>
   );

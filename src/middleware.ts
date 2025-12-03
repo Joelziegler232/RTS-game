@@ -7,5 +7,5 @@ export default NextAuthMiddleware;
 // Configuración del middleware para proteger las rutas
 export const config = {
   // Define el patrón de las rutas que deseas proteger
-  matcher: ['/welcome', "/edificios/:path*", "/panel/:path*"]
+  matcher: ['/welcome', "/edificios/:path*", "/panel/:path*", "/mercado/:path*"]
 };

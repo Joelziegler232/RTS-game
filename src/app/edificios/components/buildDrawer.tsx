@@ -1,4 +1,4 @@
-// src/app/edificios/components/buildDrawer.tsx
+'use client';
 import React, { useState } from 'react';
 import Drawer from '@mui/material/Drawer';
 import Grid from '@mui/material/Grid';
@@ -13,14 +13,16 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
-import { Dispatch, SetStateAction } from "react";
-import { structures, Structure } from "../utils/StructuresData";
+import { Dispatch, SetStateAction } from 'react';
+import { structures, Structure } from '../utils/StructuresData';
 
 interface BuildingDrawerProps {
   open: boolean;
   onClose: () => void;
-  onBuild: (price: number) => void;
+  onBuild: (cost: { gold?: number; money?: number; food?: number; lumber?: number; stone?: number }) => void;
   setStructure: Dispatch<SetStateAction<number | null>>;
+  playerLevel: number;
+  ayuntamientoArray: Structure[]; // Prop para verificar ayuntamientos
 }
 
 const DrawerContainer = styled(Box)(({ theme }) => ({
@@ -43,13 +45,39 @@ const StyledCard = styled(Card)(({ theme }) => ({
 
 const StyledMedia = styled(CardMedia)({
   height: 140,
+  backgroundSize: 'contain',
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'center',
 });
 
-const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild, setStructure }) => {
+const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild, setStructure, playerLevel, ayuntamientoArray }) => {
   const [selectedBuilding, setSelectedBuilding] = useState<Structure | null>(null);
 
+  // Verificar si ya existe un ayuntamiento
+  const hasTownHall = ayuntamientoArray.length > 0;
+
+
+  // Filtrar estructuras disponibles
+  const availableStructures = structures.filter((building) => {
+    // Si ya existe ayuntamiento, no permitimos construir otro
+    if (building.type === 'ayuntamiento' && hasTownHall) {
+      return false;
+    }
+    // El resto se muestra si el jugador tiene el nivel requerido
+    return building.desbloqueo <= playerLevel;
+  });
+ 
+
   const handleCardClick = (building: Structure) => {
-    setSelectedBuilding(building);
+    if (building.desbloqueo <= playerLevel) {
+      if (building.type === 'ayuntamiento' && hasTownHall) {
+        alert('Solo puedes construir un ayuntamiento.');
+        return;
+      }
+      setSelectedBuilding(building);
+    } else {
+      alert(`Necesitas estar en nivel ${building.desbloqueo} para construir ${building.name}`);
+    }
   };
 
   const handleCloseDialog = () => {
@@ -59,10 +87,8 @@ const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild,
   const handleBuild = () => {
     if (selectedBuilding) {
       setStructure(selectedBuilding.id);
-      onBuild(selectedBuilding.precio);
+      onBuild(selectedBuilding.cost);
       handleCloseDialog();
-    } else {
-      alert(`No tienes suficiente Dinero para construir`);
     }
   };
 
@@ -71,19 +97,23 @@ const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild,
       <Drawer anchor="bottom" open={open} onClose={onClose}>
         <DrawerContainer>
           <Grid container justifyContent="center">
-            {structures.map((building) => (
+            {availableStructures.map((building) => (
               <Grid item key={building.id}>
                 <StyledCard onClick={() => handleCardClick(building)}>
-                  <StyledMedia
-                    image={building.spriteImage}
-                    title={building.name}
-                  />
+                  {/* CardMedia - usamos spriteImage como background */}
+                  <StyledMedia image={building.spriteImage} title={building.name} />
                   <CardContent>
-                    <Typography gutterBottom variant="h6" component="h2">
+                    <Typography gutterBottom variant="h6" component="h2" style={{ color: '#fff' }}>
                       {building.name}
                     </Typography>
-                    <Typography variant="body2" color="textSecondary" component="p">
-                      Precio: ${building.precio}
+                    <Typography variant="body2" color="textSecondary" component="p" style={{ color: '#ddd' }}>
+                      Costo: {[
+                        building.cost.gold ? `Oro: ${building.cost.gold}` : null,
+                        building.cost.money ? `Dinero: ${building.cost.money}` : null,
+                        building.cost.food ? `Comida: ${building.cost.food}` : null,
+                        building.cost.lumber ? `Madera: ${building.cost.lumber}` : null,
+                        building.cost.stone ? `Piedras: ${building.cost.stone}` : null,
+                      ].filter(Boolean).join(', ')}
                     </Typography>
                   </CardContent>
                 </StyledCard>
@@ -97,17 +127,21 @@ const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild,
         <Dialog open={Boolean(selectedBuilding)} onClose={handleCloseDialog}>
           <DialogTitle>{selectedBuilding.name}</DialogTitle>
           <DialogContent>
-            <StyledMedia
-              image={selectedBuilding.spriteImage}
-              title={selectedBuilding.name}
-              style={{ height: 140 }}
-            />
+            <div style={{ width: '100%', height: 140, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <img src={selectedBuilding.spriteImage} alt={selectedBuilding.name} style={{ maxHeight: 140, objectFit: 'contain' }} />
+            </div>
             <Typography variant="body1" style={{ marginTop: 16 }}>
-              Precio: ${selectedBuilding.precio}
+              Costo: {[
+                selectedBuilding.cost.gold ? `Oro: ${selectedBuilding.cost.gold}` : null,
+                selectedBuilding.cost.money ? `Dinero: ${selectedBuilding.cost.money}` : null,
+                selectedBuilding.cost.food ? `Comida: ${selectedBuilding.cost.food}` : null,
+                selectedBuilding.cost.lumber ? `Madera: ${selectedBuilding.cost.lumber}` : null,
+                selectedBuilding.cost.stone ? `Piedras: ${selectedBuilding.cost.stone}` : null,
+              ].filter(Boolean).join(', ')}
             </Typography>
             {selectedBuilding.produccion_hora && (
               <Typography variant="body1" style={{ marginTop: 16 }}>
-                Incrementador por hora: {selectedBuilding.produccion_hora}
+                Producción por hora: {selectedBuilding.produccion_hora}
               </Typography>
             )}
             {selectedBuilding.level && (
@@ -118,6 +152,11 @@ const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild,
             {selectedBuilding.obreros && (
               <Typography variant="body1" style={{ marginTop: 0 }}>
                 Obreros: {selectedBuilding.obreros}
+              </Typography>
+            )}
+            {selectedBuilding.aldeanos_por_casa && (
+              <Typography variant="body1" style={{ marginTop: 0 }}>
+                Aumenta población: {selectedBuilding.aldeanos_por_casa}
               </Typography>
             )}
           </DialogContent>
@@ -135,4 +174,5 @@ const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild,
   );
 };
 
-export default BuildingDrawer;
+export default React.memo(BuildingDrawer);
+

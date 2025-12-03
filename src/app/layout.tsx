@@ -1,14 +1,13 @@
-
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
- import "./globals.css";
-import 'tailwindcss';
+import "./globals.css";
 import Providers from "./Providers";
+
 const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-})
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "TP Progra 3 Final",
@@ -17,17 +16,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body className={inter.variable}>
         <Providers>
-          {/* <Navbar /> */}
-        {children}
+          {children}
         </Providers>
-        </body>
+      </body>
     </html>
   );
 }

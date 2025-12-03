@@ -1,35 +1,90 @@
-/* src/app/edificios/page.module.css */
 .main {
-    position: relative;
-  }
-  
-  .signOutButton {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-  }
-  
-  .uiContainer {
-    /* Estilos de Container ya están manejados por MUI */
-  }
-  
-  .moneyWrapper {
-    position: relative;
-  }
-  
-  .moneyDisplay {
-    position: absolute;
-    bottom: 100%;
-    left: 15%;
-    transform: translateX(-100%) translateY(200%);
-    background-color: #3b82f6; /* bg-blue-500 */
-    color: white;
-    border-radius: 8px;
-    padding: 8px;
-  }
-  
-  .buildButtonWrapper {
-    position: fixed;
-    bottom: 16px;
-    left: 16px;
-  }
+  position: relative;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+}
+
+.buildButtonWrapper {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+}
+
+.profileAvatar {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.avatarImage {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #4b5563; /* border-gray-700 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.avatarPlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #1f2937; /* bg-gray-800 */
+  border: 2px solid #4b5563; /* border-gray-700 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af; /* text-gray-400 */
+  font-size: 0.75rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.resourceBar {
+  position: fixed;
+  top: 10px;
+  right: 10px; /* Pegado al borde derecho */
+  display: flex;
+  justify-content: flex-end; /* Alinea elementos a la derecha */
+  gap: 6px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  z-index: 900;
+  color: white;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  height: 42px;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: auto; /* Ajusta el ancho al contenido */
+}
+
+.resourceItem {
+  background-color: #3b82f6; /* bg-blue-500 */
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.populationItem {
+  background-color: #f97316; /* bg-orange-500 */
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.levelItem {
+  background-color: #10b981; /* bg-green-500 */
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}

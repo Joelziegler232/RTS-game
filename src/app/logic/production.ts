@@ -7,7 +7,7 @@ export function updateData(generador: Structure): Structure {
     generador.type === "gold_mine" ||
     generador.type === "stone_mine"
   ) {
-    // Type guard to ensure generador is Generadores
+    // Type guard para asegurar que generador es un Generadores
     if (
       generador.produccion_hora !== undefined &&
       generador.obreros !== undefined &&
@@ -17,17 +17,28 @@ export function updateData(generador: Structure): Structure {
       generador.capacity !== undefined &&
       generador.updateTime !== undefined
     ) {
-      const timeDiff = (new Date().getTime() - generador.updateTime.getTime()) / 1000 / 3600; // Horas
+      // 🔥 FIX CRÍTICO: convertir updateTime a Date SIEMPRE
+      const lastUpdate =
+        generador.updateTime instanceof Date
+          ? generador.updateTime
+          : new Date(generador.updateTime); // <-- permite string o Date
+
+      const timeDiff =
+        (Date.now() - lastUpdate.getTime()) / 1000 / 3600; // Horas desde última actualización
+
       const newCapacity = Math.min(
         generador.maxCapacity,
-        generador.capacity + generador.produccion_hora * generador.obreros * timeDiff
+        generador.capacity +
+          generador.produccion_hora * generador.obreros * timeDiff
       );
+
       return {
         ...generador,
         capacity: newCapacity,
-        updateTime: new Date(),
+        updateTime: new Date(), // nueva marca de tiempo
       } as Generadores;
     }
   }
+
   return generador;
 }

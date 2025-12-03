@@ -1,20 +1,41 @@
 // src/app/edificios/components/creacionMenu.tsx
-import Units from "@/app/generadores/objects/Units";
-import { User } from "@/app/objects/user";
-import Image from "next/image";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+'use client';
+import Units from '@/app/generadores/objects/Units';
+import { User } from '@/app/objects/user';
+import Image from 'next/image';
+import { Dispatch, SetStateAction, useState } from 'react';
 
 const units_Array: Units[] = [
   {
     id: 1,
-    name: "Aldeano",
+    name: 'Aldeano',
     img: <Image key="Aldeano" src="/Aldeano.png" width={60} height={70} alt="png Aldeano" />,
-    precio: 100,
-    incrementador_time: 200,
+    precio: 20,
+    incrementador_time: 5,
     level: 1,
     desbloqueo: 1,
   },
 ];
+
+interface CreacionMenuProps {
+  user: User;
+  quantity: number;
+  setProgressBar: Dispatch<SetStateAction<boolean | null>>;
+  setUnit: Dispatch<SetStateAction<Units | undefined>>;
+  setQuantity: Dispatch<SetStateAction<number>>;
+  playerPopulationCap: number;
+  playerVillagers: number;
+  playerLevel: number;
+  playerFood: number;
+  setPlayerFood: Dispatch<SetStateAction<number>>;
+  ayunMenu: boolean;
+
+  lumberCampArray: any[];
+  goldMineArray: any[];
+  stoneMineArray: any[];
+  millArray: any[];
+  soldierCount: number;
+}
 
 export default function CreacionMenu({
   user,
@@ -22,76 +43,112 @@ export default function CreacionMenu({
   setProgressBar,
   setUnit,
   setQuantity,
-}: {
-  user: User;
-  quantity: number;
-  setProgressBar: Dispatch<SetStateAction<boolean | null>>;
-  setUnit: Dispatch<SetStateAction<Units | undefined>>;
-  setQuantity: Dispatch<SetStateAction<number>>;
-}) {
-  const [creacionMenu, setCreacionMenu] = useState(true);
+  playerPopulationCap,
+  playerVillagers,
+  playerLevel,
+  playerFood,
+  setPlayerFood,
+  ayunMenu,
+  lumberCampArray,
+  goldMineArray,
+  stoneMineArray,
+  millArray,
+  soldierCount,
+}: CreacionMenuProps) {
+  const [creacionMenu, setCreacionMenu] = useState(true); // true = menú cerrado
+  const [isCreatingUnit, setIsCreatingUnit] = useState(false);
 
-  const CreacionMenuIcons = ({ units, user }: { units: Units; user: User }) => {
-    if (user.level >= units.desbloqueo) {
-      return (
-        <div
-          className="sidebar-icon group"
-          onClick={() => {
-            setProgressBar(true);
-            setQuantity(quantity + 1);
-            setUnit(units);
-          }}
-        >
-          {units.img}
-          <span className="sidebar-name group-hover:scale-100">
-            {units.name}
-            <br />
-            Precio: {units.precio}
-            <br />
-            Tiempo: {units.incrementador_time}
-            <br />
-            Cantidad x1
-          </span>
-        </div>
-      );
-    } else {
-      return (
-        <div className="min-lev-req group">
-          <i className="opacity-20">{units.img}</i>
-          <span className="sidebar-name group-hover:scale-100 opacity-80 flex flex-col">
-            <div>{`You must be Level: ${units.desbloqueo} to unlock ${units.name}`}</div>
-            <div>{`Current Level: ${user.level}`}</div>
-          </span>
-        </div>
-      );
+  // Solo cambia esta función handleCreateVillager
+const handleCreateVillager = async () => {
+  // SI YA HAY UNO EN COLA O CREÁNDOSE → NO HACEMOS NADA
+  if (quantity > 0) {
+    // OPCIONAL: sonido o mensaje
+    return;
+  }
 
+  try {
+    const aldeanosTrabajando =
+      (lumberCampArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
+      (goldMineArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
+      (stoneMineArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
+      (millArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0);
 
+    const poblacionActual = playerVillagers + aldeanosTrabajando + soldierCount;
+
+    if (poblacionActual + 1 > playerPopulationCap) {
+      alert(`Límite de población alcanzado: ${poblacionActual}/${playerPopulationCap}`);
+      return;
     }
-  };
+
+    if (playerFood < 20) {
+      alert('No tienes suficiente comida (20)');
+      return;
+    }
+
+    // DESCONTAR COMIDA
+    setPlayerFood(prev => prev - 20);
+
+    await fetch(`/api/user_instance/${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resources: [{ resource: 'food', amount: playerFood - 20 }]
+      })
+    });
+
+    // SOLO UNO EN COLA
+    setUnit(units_Array[0]);
+    setQuantity(1);  // ← siempre 1
+    setProgressBar(true);
+
+  } catch (error) {
+    console.error("Error:", error);
+    setPlayerFood(prev => prev + 20);
+    alert("Error al iniciar creación");
+  }
+};
+
+  if (!ayunMenu) return null;
 
   return (
     <main>
-      <div
-        className={`fixed bottom-0 h-[100px] w-screen m-0 flex flex-row bg-transparent shadow-md transition-all duration-300 ${
-          creacionMenu ? "translate-y-full" : "translate-y-0"
-        }`}
-      >
-        {units_Array.map((units, index) => (
-          <CreacionMenuIcons units={units} user={user} key={index} />
+      {/* MENÚ DE UNIDADES */}
+      <div className={`fixed bottom-0 h-[100px] w-screen flex flex-row bg-transparent transition-all duration-300 ${creacionMenu ? 'translate-y-full' : 'translate-y-0'}`}>
+        {units_Array.map((unit, index) => (
+          <div
+            key={index}
+            className="sidebar-icon group cursor-pointer hover:scale-110 transition-transform"
+            onClick={handleCreateVillager}
+            style={{
+              opacity: playerFood < 20 || isCreatingUnit ? 0.5 : 1,
+              pointerEvents: playerFood < 20 || isCreatingUnit ? 'none' : 'auto'
+            }}
+          >
+            {unit.img}
+            <span className="sidebar-name group-hover:scale-100">
+              {unit.name}
+              <br />
+              Precio: 20 Comida
+              <br />
+              Tiempo: 5s
+            </span>
+          </div>
         ))}
       </div>
-      <div>
-        <button
-          className={`fixed bottom-[105px] left-[47%] transition-all duration-300 ${
-            creacionMenu ? "translate-y-[105px]" : "translate-y-0"
-          }`}
-          onClick={() => {
-            setCreacionMenu(!creacionMenu);
-          }}
-        >
-          Crear Aldeano
-        </button>
-      </div>
+
+      {/* BOTÓN AZUL QUE SOLO ABRE/CIERRA EL MENÚ */}
+      <button
+        onClick={() => setCreacionMenu(!creacionMenu)}
+        className={`
+          fixed bottom-[105px] left-[47%] 
+          bg-blue-600 hover:bg-blue-700 text-white font-bold 
+          px-6 py-3 rounded-lg shadow-lg z-50
+          transition-all duration-300 transform
+          ${creacionMenu ? 'translate-y-[105px]' : 'translate-y-0'}
+        `}
+      >
+        Crear Aldeano
+      </button>
     </main>
   );
 }

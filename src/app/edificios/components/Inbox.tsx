@@ -1,96 +1,120 @@
-// src/pages/inbox.tsx (o donde esté ubicado tu componente Inbox)
+// Inbox.tsx
 import React, { useEffect, useState } from 'react';
-import { CardTitle, CardHeader, CardContent, CardFooter, Card } from '@/app/edificios/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/app/edificios/components/ui/card';
 import { Textarea } from '@/app/edificios/components/ui/textarea';
 import { Button } from '@/app/edificios/components/ui/button';
-import { useSession } from 'next-auth/react'; // Importa el hook useSession de next-auth/react
+import { useSession } from 'next-auth/react';
 import { getMessages, sendMessage } from '../utils/msgServices';
+import Image from 'next/image';
 
-const Message = ({ sender, content, timestamp }: { sender: string; content: string; timestamp: string }) => {
+const MessageItem = ({ sender, senderPicture, content, timestamp }: any) => {
+  const date = new Date(timestamp).toLocaleTimeString('es-ES', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+
   return (
-    <div className="flex items-start gap-4">
-      <div className="rounded-lg w-8 h-8 bg-[#55efc4] text-2xl flex items-center justify-center">😁</div>
-      <div className="grid gap-1 items-start text-sm">
+    <div className="flex items-start gap-3 animate-in slide-in-from-left-2">
+      {senderPicture ? (
+        <Image
+          src={senderPicture}
+          alt={sender || "Guerrero"}
+          width={32}
+          height={32}
+          className="rounded-full object-cover border-2 border-yellow-500 shadow-lg"
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
+          {sender ? sender[0].toUpperCase() : "?"}
+        </div>
+      )}
+      <div className="flex-1">
         <div className="flex items-center gap-2">
-          <div className="font-medium">{sender}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{timestamp}</div>
+          <span className="font-bold text-yellow-400">{sender || "Anónimo"}</span>
+          <span className="text-xs text-gray-500">· {date}</span>
         </div>
-        <div>
-          <p>{content}</p>
-        </div>
+        <p className="text-white mt-1">{content}</p>
       </div>
     </div>
   );
 };
 
 const Inbox = () => {
-  const { data: session } = useSession(); // Obtiene la sesión del usuario autenticado
-
-  const [messages, setMessages] = useState<{ _id: string; sender: string; content: string; timestamp: string }[]>([]);
+  const { data: session } = useSession();
+  const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const messagesData = await getMessages();
-        setMessages(messagesData); // Actualiza el estado con los mensajes obtenidos
-      } catch (error) {
-        console.error('Error al obtener mensajes:', error);
-      }
+    const fetch = async () => {
+      const data = await getMessages();
+      setMessages(data);
     };
-    fetchMessages();
+    fetch();
+    const interval = setInterval(fetch, 5000); // Refresca cada 5 seg
+    return () => clearInterval(interval);
   }, []);
 
-  const handleSendMessage = async () => {
-    if (!newMessage || !session?.user?.name) return;
-  
-    const senderName = session.user.name as string; // Asegura que senderName es de tipo string
-  
-    try {
-      await sendMessage(senderName, newMessage);
-      // Actualiza localmente los mensajes después de enviar uno nuevo
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          _id: `${prevMessages.length + 1}`,
-          sender: senderName, // Usar senderName que es garantizado ser string
-          content: newMessage,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-      setNewMessage('');
-    } catch (error) {
-      console.error('Error al enviar mensaje:', error);
-    }
+  const handleSend = async () => {
+    if (!newMessage.trim() || !session?.user?.id) return;
+
+    await sendMessage(session.user.id as string, newMessage);
+    setNewMessage('');
+    const updated = await getMessages();
+    setMessages(updated);
   };
-  
+
+  // ESTO BLOQUEA EL SCROLL DEL FONDO CUANDO ESTÁS EN EL BUZÓN
+const handleWheel = (e: React.WheelEvent) => {
+  const element = e.currentTarget;
+  const atBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
+  const atTop = element.scrollTop === 0;
+
+  if (e.deltaY > 0 && atBottom) {
+    e.preventDefault();
+  } else if (e.deltaY < 0 && atTop) {
+    e.preventDefault();
+  }
+};
 
   return (
-    <Card className="max-w-md rounded-2xl w-full">
-      <CardHeader className="px-4 pt-4">
-        <CardTitle>Chat</CardTitle>
+    <Card className="max-w-md w-full bg-gray-900 border-yellow-600 border-4 shadow-2xl">
+      <CardHeader className="bg-yellow-600 text-black">
+        <CardTitle className="text-2xl font-black text-center">BUZÓN</CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <Message
-              key={message._id}
-              sender={message.sender}
-              content={message.content}
-              timestamp={message.timestamp}
-            />
-          ))}
-        </div>
-      </CardContent>
-      <CardFooter className="px-4 pb-4">
-        <div className="flex items-center gap-2">
+     <CardContent 
+  className="max-h-96 overflow-y-auto p-5 space-y-4 scrollbar-thin select-none"
+  onWheel={(e) => {
+    e.stopPropagation();
+    const el = e.currentTarget;
+    const atTop = el.scrollTop <= 0;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 5;
+
+    if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
+      e.preventDefault();
+    }
+  }}
+  style={{ overscrollBehaviorY: 'contain' }}
+>
+  {messages.length === 0 ? (
+    <p className="text-center text-gray-500 italic">No hay mensajes...</p>
+  ) : (
+    messages.map((msg) => (
+      <MessageItem key={msg._id} {...msg} />
+    ))
+  )}
+</CardContent>
+      <CardFooter className="p-4 bg-gray-800 border-t-4 border-yellow-600">
+        <div className="flex gap-2 w-full">
           <Textarea
-            value={newMessage}
+            value={newMessage} 
             onChange={(e) => setNewMessage(e.target.value)}
-            className="flex-1 rounded-2xl border border-gray-200 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             placeholder="Escribe tu mensaje..."
+            className="bg-gray-700 text-white border-yellow-600 placeholder-gray-400"
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
           />
-          <Button onClick={handleSendMessage}>Enviar</Button>
+          <Button onClick={handleSend} className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold">
+            Enviar
+          </Button>
         </div>
       </CardFooter>
     </Card>

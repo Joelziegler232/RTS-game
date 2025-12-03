@@ -69,15 +69,16 @@ export default function ProfilePage() {
       return;
     }
 
-    if (name.length < 3 || name.length > 50) {
-      setError('El nombre debe tener entre 3 y 50 caracteres');
-      return;
-    }
+    if (name.trim().length < 3 || name.trim().length > 20) {
+  setError('El nombre debe tener entre 3 y 20 caracteres');
+  return;
+}
 
     const formData = new FormData();
-    if (name !== session.user.name) {
-      formData.append('fullname', name);
-    }
+    if (name.trim() !== session.user.name) {
+  formData.append('fullname', name.trim());
+}
+
     if (profilePicture) {
       formData.append('profilePicture', profilePicture);
     }
@@ -110,7 +111,7 @@ export default function ProfilePage() {
       }
 
       const result = await response.json();
-      setSuccess(result.message || 'Perfil actualizado correctamente');
+      setSuccess(result.message || '¡Perfil actualizado con éxito!');
 
       // Actualizar la sesión con los datos devueltos por el servidor
       await update({
@@ -221,6 +222,10 @@ export default function ProfilePage() {
                 className="w-full p-2 border border-gray-700 rounded-lg text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+              <p className="text-yellow-400 text-xs mt-1 text-center">
+  Puedes cambiarlo si está disponible
+</p>
+
             </div>
             <div>
               <label htmlFor="profilePicture" className="text-white mb-1 block">Foto de perfil</label>

@@ -1,8 +1,8 @@
 // src/models/map.ts
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, models, Document } from "mongoose";
 
 interface IMap extends Document {
-  grid: string[][]; // Mapa 2D con tipos de recursos
+  grid: string[][];
   createdAt: Date;
 }
 
@@ -11,4 +11,5 @@ const mapSchema = new Schema<IMap>({
   createdAt: { type: Date, default: Date.now },
 });
 
-export const MapModel = model<IMap>("Map", mapSchema);
+// Exportar el modelo, pero solo si no existe ya
+export const MapModel = models.Map || model<IMap>("Map", mapSchema);

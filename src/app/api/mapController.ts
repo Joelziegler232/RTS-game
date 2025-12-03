@@ -1,49 +1,85 @@
-// app/api/mapController.ts
-import { MapModel } from "../../../src/app/models/map"; // Asegúrate de tener la ruta correcta
+// src/app/api/mapController.ts
+import { MapModel } from "../models/map";
 import * as perlin from "perlin-noise";
 
-const GRID_SIZE = 100; // Tamaño de la cuadrícula
+const GRID_SIZE = 100;
 
-function mapNoiseToResource(noiseValue: number): string {
-  if (noiseValue < -0.5) return "water";
-  if (noiseValue < 0) return "plains";
-  if (noiseValue < 0.5) return "forest";
+export function mapNoiseToResource(noiseValue: number): string {
+  if (noiseValue < 0.1) return "water";
+  if (noiseValue < 0.4) return "sand";
+  if (noiseValue < 0.6) return "plains";
+  if (noiseValue < 0.75) return "forest";
   return "mountain";
 }
 
-function generateMap(gridSize: number): string[][] {
-  const perlinGrid = perlin.generatePerlinNoise(gridSize, gridSize, { octaveCount: 4 });
-  return Array.from({ length: gridSize }, (_, y) =>
-    Array.from({ length: gridSize }, (_, x) =>
-      mapNoiseToResource(perlinGrid[y * gridSize + x])
-    )
+export function generateMap(gridSize: number): string[][] {
+  const perlinGrid = perlin.generatePerlinNoise(gridSize, gridSize, { octaveCount: 6 });
+  const map: string[][] = Array.from({ length: gridSize }, (_, y) =>
+    Array.from({ length: gridSize }, (_, x) => mapNoiseToResource(perlinGrid[y * gridSize + x]))
   );
+
+  // Océano en esquina inferior izquierda
+  const oceanWidth = Math.floor(gridSize * 0.4);
+  const oceanHeight = Math.floor(gridSize * 0.5);
+  const oceanNoise = perlin.generatePerlinNoise(gridSize, gridSize, { octaveCount: 5 });
+  for (let y = gridSize - oceanHeight; y < gridSize; y++) {
+    for (let x = 0; x < oceanWidth; x++) {
+      const distX = x / oceanWidth;
+      const distY = (y - (gridSize - oceanHeight)) / oceanHeight;
+      const distance = Math.sqrt(distX * distX + distY * distY);
+      if (oceanNoise[y * gridSize + x] < 0.7 - 0.5 * distance) map[y][x] = "water";
+    }
+  }
+
+  // Río principal
+  const riverY = Math.floor(gridSize / 2) + Math.floor(Math.random() * 10 - 5);
+  for (let x = 0; x < gridSize; x++) {
+    const yVariation = Math.floor(Math.sin(x / 10) * 5);
+    for (let dy = -2; dy <= 2; dy++) {
+      const ny = riverY + yVariation + dy;
+      if (ny >= 0 && ny < gridSize) map[ny][x] = "water";
+    }
+  }
+
+  // Lagos pequeños
+  for (let i = 0; i < 3; i++) {
+    const centerX = Math.floor(Math.random() * (gridSize - 20)) + 10;
+    const centerY = Math.floor(Math.random() * (gridSize - 20)) + 10;
+    const radius = 3 + Math.floor(Math.random() * 3);
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const nx = centerX + dx;
+        const ny = centerY + dy;
+        if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && Math.sqrt(dx * dx + dy * dy) <= radius && Math.random() < 0.9) {
+          map[ny][nx] = "water";
+        }
+      }
+    }
+  }
+
+  // Recursos (1 loop para todo)
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      const tile = map[y][x];
+
+      if ((tile === "sand" || tile === "mountain") && Math.random() < 0.03) map[y][x] = "gold";
+      else if (tile === "forest" && Math.random() < 0.03) map[y][x] = "stone";
+      else if ((tile === "plains" || tile === "forest") && Math.random() < 0.03) map[y][x] = "berry";
+      else if (tile === "sand" && Math.random() < 0.05) map[y][x] = "palm";
+      else if ((tile === "forest" || tile === "plains") && Math.random() < 0.1) map[y][x] = "tree";
+    }
+  }
+
+  return map;
 }
 
 export const createMap = async () => {
-    try {
-      const grid = generateMap(GRID_SIZE);
-      const newMap = new MapModel({ grid });
-      await newMap.save();
-      return newMap;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new Error(error.message); // Ahora TypeScript sabe que `error` es un `Error`
-      } else {
-        throw new Error("Un error desconocido ocurrió");
-      }
-    }
-  };
-  
-  export const getMaps = async () => {
-    try {
-      return await MapModel.find().sort({ createdAt: -1 });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new Error(error.message); // Ahora TypeScript sabe que `error` es un `Error`
-      } else {
-        throw new Error("Un error desconocido ocurrió");
-      }
-    }
-  };
-  
+  const grid = generateMap(GRID_SIZE);
+  const newMap = new MapModel({ grid });
+  await newMap.save();
+  return newMap;
+};
+
+export const getMaps = async () => {
+  return await MapModel.find().sort({ createdAt: -1 });
+};

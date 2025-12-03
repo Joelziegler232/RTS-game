@@ -1,6 +1,6 @@
-// src/app/api/messages/controller.ts
 import Message from '@/app/models/messageModel';
 
+// Obtiene todos los mensajes del chat global
 export const getMessages = async () => {
   try {
     const messages = await Message.find();
@@ -10,6 +10,7 @@ export const getMessages = async () => {
   }
 };
 
+// Crea y guarda un nuevo mensaje en el chat global
 export const createMessage = async (body: any) => {
   try {
     const newMessage = new Message(body);

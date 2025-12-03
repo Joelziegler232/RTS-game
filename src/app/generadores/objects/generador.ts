@@ -1,4 +1,4 @@
-// src/app/generadores/objects/generador.ts
+
 export default interface Generadores {
   id: number;
   name: string;

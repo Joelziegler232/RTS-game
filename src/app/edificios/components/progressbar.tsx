@@ -1,21 +1,23 @@
 // src/app/edificios/components/progressbar.tsx
-import Units from "@/app/generadores/objects/Units";
-import { Aumentador } from "@/app/objects/aumentar";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { Structure } from "../utils/StructuresData";
+'use client';
+
+import Units from '@/app/generadores/objects/Units';
+import { Dispatch, SetStateAction, useEffect, useState, useRef } from 'react';
+import { Structure } from '../utils/StructuresData';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ProgressbarProps {
   running: boolean;
   unit: Units;
-  setProgressBar: Dispatch<SetStateAction<boolean | null>>;
   quantity: number;
+  setProgressBar: Dispatch<SetStateAction<boolean | null>>;
   ayuntamiento: Structure;
-  setMaxCreacion: Dispatch<SetStateAction<boolean>>;
   setQuantity: Dispatch<SetStateAction<number>>;
-  aumentar: Aumentador | null;
+  userId: string;
+  setPlayerVillagers: Dispatch<SetStateAction<number>>;
+  setUnits: Dispatch<SetStateAction<any[]>>;
+  setPlayerFood: Dispatch<SetStateAction<number>>; // ← Añadimos esto
 }
-
-export const units: Units[] = [];
 
 export default function Progressbar({
   running,
@@ -23,93 +25,104 @@ export default function Progressbar({
   quantity,
   setProgressBar,
   ayuntamiento,
-  setMaxCreacion,
   setQuantity,
-  aumentar,
+  userId,
+  setPlayerVillagers,
+  setUnits,
+  setPlayerFood,
 }: ProgressbarProps) {
   const [seconds, setSeconds] = useState(0);
-  const [isRunning, setIsRunning] = useState(running);
-  let maxAlcanzado = false;
+  const timePerUnit = unit.incrementador_time; // 5 segundos por aldeano
+  const isCreatingUnit = useRef(false);
 
-  if (quantity >= (ayuntamiento.maxCap ?? 0)) {
-    quantity = ayuntamiento.maxCap ?? 0;
-    maxAlcanzado = true;
-  }
-
+  // Reiniciar contador cada vez que cambia la cola o se reinicia
   useEffect(() => {
-    console.log("useEffect called");
-    let intervalId: NodeJS.Timeout;
+    setSeconds(0);
+  }, [running, quantity]);
 
-    if (isRunning) {
-      intervalId = setInterval(() => {
-        setSeconds((prevSeconds) => {
-          if (prevSeconds >= unit.incrementador_time * quantity!) {
-            setIsRunning(false);
-            setProgressBar(false);
-            console.log("addTroopToDB called with quantity:", quantity);
-            addTroopToDB(unit, quantity, ayuntamiento);
-            setQuantity(0);
-            return prevSeconds;
-          } else if (aumentar) {
-            return prevSeconds + aumentar.aumentar * (ayuntamiento.obreros ?? 0);
-          } else {
-            return prevSeconds + 1 * (ayuntamiento.obreros ?? 0);
-          }
-        });
-      }, 1000);
-    }
+  // Barra de progreso
+  useEffect(() => {
+    if (!running || quantity <= 0) return;
 
-    return () => {
-      console.log("Cleanup interval");
-      clearInterval(intervalId);
-    };
-  }, [isRunning, unit.incrementador_time, quantity, aumentar, ayuntamiento.obreros]);
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        if (prev >= timePerUnit) {
+          clearInterval(interval);
+          finishOneUnit();
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 1000);
 
-  let progress = (seconds / (unit.incrementador_time * quantity!)) * 100;
+    return () => clearInterval(interval);
+  }, [running, quantity, timePerUnit]);
 
-  const hourstotal = Math.floor((unit.incrementador_time * quantity! || 0) / 3600);
-  const minutestotal = Math.floor(((unit.incrementador_time * quantity! || 0) % 3600) / 60);
-  const secondstotal = (unit.incrementador_time * quantity! || 0) % 60;
+  // Esta función se ejecuta SOLO cuando termina el tiempo de una unidad
+  const finishOneUnit = async () => {
+  if (isCreatingUnit.current) return;
+  isCreatingUnit.current = true;
 
-  const formatTime = (value: number) => {
-    return value.toString().padStart(2, '0');
+  const newUnit = {
+    id: uuidv4(),
+    type: 'villager',
+    position: {
+      x: ayuntamiento.position!.x + 1,
+      y: ayuntamiento.position!.y + 1,
+    },
+    status: 'idle',
   };
 
-  console.log("Current quantity:", quantity);
+  try {
+    const response = await fetch(`/api/user_instance/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ units: [newUnit] }), // Solo agregamos unidad
+    });
 
-  function addTroopToDB(unit: Units, quantity: number, ayuntamiento: Structure) {
-    console.log("addTroopToDB executing, adding", quantity, "units.");
-    for (let i = 0; i < quantity; i++) {
-      const newUnit: Units = {
-        ...unit,
-        id: units.length + i + 1,
-        position: { x: (ayuntamiento.position?.x ?? 0) + i, y: ayuntamiento.position?.y ?? 0 },
-      };
-      units.push(newUnit);
-    }
+    if (!response.ok) throw new Error('Error creando aldeano');
+
+    const updatedInstance = await response.json();
+
+    // Actualizamos todo desde el backend
+    setPlayerVillagers(updatedInstance.population.villagers || 0);
+    setUnits(updatedInstance.units || []);
+
+    // La comida ya está descontada desde CreacionMenu → no tocar
+    // setPlayerFood(...) ← BORRÁ ESTO SI LO TENÉS
+
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error creando aldeano');
+    setQuantity(prev => prev - 1);
+  } finally {
+    setQuantity(0);  // ← siempre 0 cuando termina
+if (quantity <= 1) {
+  setProgressBar(false);
+}
+    isCreatingUnit.current = false;
   }
+};
 
-  const MaxCreacion = () => (
-    <span>
-      Has alcanzado el máximo <br />
-      límite de creación de: {ayuntamiento.maxCap}
-    </span>
-  );
+  const progress = timePerUnit > 0 ? (seconds / timePerUnit) * 100 : 0;
+
+  if (!running || quantity === 0) return null;
 
   return (
-    <div className="absolute flex flex-col justify-center items-center left-1/2 top-0 transform -translate-x-1/2">
-      <div className="relative w-[200px] h-5 border border-gray-300 rounded-lg bg-gray-200 overflow-hidden">
-        <div className="h-[100%] bg-black transition-all" style={{ width: `${progress}%` }}></div>
+    <div className="absolute left-1/2 top-4 -translate-x-1/2 z-50 bg-black/90 text-white px-6 py-4 rounded-xl shadow-2xl border border-cyan-500">
+      <div className="relative w-80 h-12 bg-gray-800 rounded-lg overflow-hidden border-2 border-cyan-400">
+        <div
+          className="h-full bg-gradient-to-r from-blue-600 via-cyan-500 to-green-500 transition-all duration-1000 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center font-bold text-lg">
+          {seconds}s / {timePerUnit}s
+        </div>
       </div>
-      <span>
-        {formatTime(Math.floor(seconds / 3600))}:{formatTime(Math.floor((seconds % 3600) / 60))}:{formatTime(Math.floor(seconds % 60))} /
-        {formatTime(hourstotal)}:{formatTime(minutestotal)}:{formatTime(secondstotal)}
-      </span>
-      <div>
-        Creando: {quantity}x de: {unit.name} <br />
-        Obreros: {ayuntamiento.obreros ?? 0}
-        {maxAlcanzado ? <MaxCreacion /> : null}
-      </div>
+
+      <div className="text-center mt-3 text-xl font-bold text-cyan-300">
+  Creando aldeano...
+</div>
     </div>
   );
 }

@@ -1,105 +1,122 @@
-// src/app/edificios/units/unit.tsx
-import { useRef, useEffect } from "react";
-import * as THREE from "three";
-import styles from "./Unit.module.css"; // Nuevo archivo CSS
+'use client';
+import { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
 interface UnitProps {
-  initialPosition: { x: number; y: number }; // Posición en coordenadas de grilla (0-99)
+  type: string;
+  initialPosition: { x: number; y: number };
   mapWidth: number;
   mapHeight: number;
-  scene: THREE.Scene; // Escena pasada desde mapBuilding
+  scene: THREE.Scene;
+  gameMap: string[][];
+  buildings: any[];
 }
 
-export default function Unit({ initialPosition, mapWidth, mapHeight, scene }: UnitProps) {
+export default function Unit({
+  type,
+  initialPosition,
+  mapWidth,
+  mapHeight,
+  scene,
+  gameMap,
+  buildings,
+}: UnitProps) {
   const unitRef = useRef<THREE.Sprite | null>(null);
-  const positionRef = useRef({ x: initialPosition.x, y: initialPosition.y });
+
+  // Solo pueden estar en plains o grass
+  const validTerrains = ['plains', 'grass'];
+
+  // Posiciones ocupadas por edificios
+  const occupiedPositions = new Set<string>();
+  buildings.forEach((b) => {
+    if (b.position?.x != null && b.position?.y != null) {
+      const x = Math.floor(b.position.x);
+      const y = Math.floor(b.position.y);
+      occupiedPositions.add(`${x},${y}`);
+    }
+  });
+
+  const isValidSpot = (x: number, y: number): boolean => {
+    if (y < 0 || y >= gameMap.length || x < 0 || x >= gameMap[0].length) return false;
+    if (!validTerrains.includes(gameMap[y][x])) return false;
+    if (occupiedPositions.has(`${x},${y}`)) return false;
+    return true;
+  };
+
+  const findValidPosition = (startX: number, startY: number) => {
+    const sx = Math.round(startX);
+    const sy = Math.round(startY);
+
+    // 1. Posición original
+    if (isValidSpot(sx, sy)) return { x: sx, y: sy };
+
+    // 2. Búsqueda en espiral (máximo 15 casillas)
+    for (let distance = 1; distance <= 15; distance++) {
+      for (let dx = -distance; dx <= distance; dx++) {
+        for (let dy = -distance; dy <= distance; dy++) {
+          // Solo el borde del cuadrado
+          if (Math.abs(dx) !== distance && Math.abs(dy) !== distance) continue;
+
+          const x = sx + dx;
+          const y = sy + dy;
+
+          if (isValidSpot(x, y)) {
+            return { x, y };
+          }
+        }
+      }
+    }
+
+    // 3. Barrido completo del mapa (nunca falla)
+    for (let y = 0; y < gameMap.length; y++) {
+      for (let x = 0; x < gameMap[y].length; x++) {
+        if (isValidSpot(x, y)) {
+          return { x, y };
+        }
+      }
+    }
+
+    // Último recurso
+    return { x: Math.floor(mapWidth / 2), y: Math.floor(mapHeight / 2) };
+  };
 
   useEffect(() => {
-    // Crear sprite para la unidad
-    const texture = new THREE.TextureLoader().load("/unit.png"); // Imagen para la unidad
-    const material = new THREE.SpriteMaterial({ map: texture });
-    const sprite = new THREE.Sprite(material);
-    sprite.position.set(
-      initialPosition.x - mapWidth / 2 + 0.5,
-      0.5,
-      initialPosition.y - mapHeight / 2 + 0.5
-    );
-    sprite.scale.set(1, 1, 1);
-    scene.add(sprite);
-    unitRef.current = sprite;
+    if (!initialPosition || !gameMap || gameMap.length === 0) return;
 
-    // Iniciar movimiento
-    moveRandomUnit(20, { x: 50, y: 50 });
+    const { x, y } = findValidPosition(initialPosition.x, initialPosition.y);
+
+    const texturePath = type === 'soldier' ? '/soldado.png' : '/Aldeana.png';
+    const loader = new THREE.TextureLoader();
+
+    loader.load(
+      texturePath,
+      (texture) => {
+        const material = new THREE.SpriteMaterial({ map: texture });
+        const sprite = new THREE.Sprite(material);
+
+        sprite.position.set(
+          x - mapWidth / 2 + 0.5,
+          0.5,
+          y - mapHeight / 2 + 0.5
+        );
+
+        sprite.scale.set(1, 1, 1);
+        scene.add(sprite);
+        unitRef.current = sprite;
+      },
+      undefined,
+      (err) => console.error('Error cargando textura de unidad:', err)
+    );
 
     return () => {
       if (unitRef.current) {
         scene.remove(unitRef.current);
+        unitRef.current.material?.map?.dispose();
+        unitRef.current.material?.dispose();
+        unitRef.current = null;
       }
     };
-  }, [scene, mapWidth, mapHeight, initialPosition]);
+  }, [scene, mapWidth, mapHeight, initialPosition, type, gameMap, buildings]);
 
-  function moveCreeper(newPosition: { x: number; y: number }) {
-    const positionToChange = { ...positionRef.current };
-    const moveStepByStep = () => {
-      if (newPosition.x !== positionRef.current.x) {
-        newPosition.x < positionRef.current.x
-          ? (positionToChange.x -= 0.1)
-          : (positionToChange.x += 0.1);
-      }
-      if (newPosition.y !== positionRef.current.y) {
-        newPosition.y < positionRef.current.y
-          ? (positionToChange.y -= 0.1)
-          : (positionToChange.y += 0.1);
-      }
-      positionRef.current = positionToChange;
-
-      if (unitRef.current) {
-        unitRef.current.position.set(
-          positionRef.current.x - mapWidth / 2 + 0.5,
-          0.5,
-          positionRef.current.y - mapHeight / 2 + 0.5
-        );
-      }
-
-      if (
-        Math.abs(newPosition.x - positionRef.current.x) < 0.1 &&
-        Math.abs(newPosition.y - positionRef.current.y) < 0.1
-      ) {
-        clearInterval(intervalId);
-        console.log("Arrived at destination");
-      }
-    };
-    const intervalId = setInterval(moveStepByStep, 16); // ~60 FPS
-  }
-
-  function moveRandomUnit(radius: number, center: { x: number; y: number }) {
-    positionRef.current = { x: center.x, y: center.y + radius / 2 };
-
-    const moveInCircle = () => {
-      const rndNumber = Math.random();
-      const moveDirection = rndNumber >= 0.5 ? 1 : -1;
-      let newPosition = { x: positionRef.current.x, y: positionRef.current.y };
-
-      if (Math.abs(positionRef.current.y - (center.y + radius / 2)) < 0.1) {
-        newPosition.x += moveDirection * radius / 2;
-        newPosition.y -= radius;
-      } else if (Math.abs(positionRef.current.y - (center.y - radius / 2)) < 0.1) {
-        newPosition.x += moveDirection * radius / 2;
-        newPosition.y += radius;
-      } else if (Math.abs(positionRef.current.x - (center.x + radius)) < 0.1) {
-        newPosition.x -= radius / 2;
-        newPosition.y += radius;
-      } else {
-        newPosition.x += radius / 2;
-        newPosition.y += moveDirection * radius / 2;
-      }
-
-      moveCreeper(newPosition);
-    };
-    const movement = setInterval(moveInCircle, 4000);
-
-    return () => clearInterval(movement);
-  }
-
-  return null; // No renderizamos nada en el DOM, todo es manejado por Three.js
+  return null;
 }

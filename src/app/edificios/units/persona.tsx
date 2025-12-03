@@ -29,13 +29,7 @@ export default function Persona({
         top: unitPosition.y,
       }}
     >
-      <Image
-  src="/Aldeano.png"
-  alt="Aldeano"
-  width={32}
-  height={32}
-  style={{ width: "auto", height: "auto" }}
-/>
+    
     </div>
   );
 }

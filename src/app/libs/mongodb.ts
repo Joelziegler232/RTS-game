@@ -1,41 +1,51 @@
-// Importa el paquete mongoose para interactuar con MongoDB
-import mongoose from "mongoose";
+import mongoose, { Connection } from "mongoose";
 
-// Extrae la URI de MongoDB de las variables de entorno
 const { MONGODB_URI } = process.env;
 
-// Verifica si se proporcionó la URI de MongoDB
 if (!MONGODB_URI) {
-  // Lanza un error si la URI no está definida
   throw new Error("No MONGODB_URI provided");
 }
 
-// Exporta una función asincrónica llamada connect que devuelve una promesa booleana
-export const connect = async (): Promise<boolean> => {
-  try {
-    // Intenta conectar a la base de datos MongoDB utilizando la URI proporcionada
-    const { connection } = await mongoose.connect(MONGODB_URI);
+interface MongooseCache {
+  conn: Connection | null;
+  promise: Promise<Connection> | null;
+}
 
-    // Verifica el estado de la conexión
-    if (connection.readyState === 1) {
-      // Si la conexión se establece correctamente, imprime un mensaje de éxito en la consola
-      console.log("Connected to MongoDB");
-      // Devuelve true para indicar una conexión exitosa
-      return true;
-    } else {
-      // Si la conexión falla, imprime un mensaje de error en la consola
-      console.error("Connection failed");
-      // Devuelve false para indicar una conexión fallida
-      return false;
-    }
-  } catch (error: unknown) {
-    // Captura cualquier error que ocurra durante el intento de conexión
-    if (error instanceof Error) {
-      console.error("Error connecting to MongoDB:", error.message);
-    } else {
-      console.error("An unknown error occurred during MongoDB connection");
-    }
-    // Devuelve false para indicar una conexión fallida
-    return false;
+let cached: MongooseCache = (global as any).mongoose;
+
+if (!cached) {
+  cached = (global as any).mongoose = {
+    conn: null,
+    promise: null,
+  };
+}
+
+export async function connect(): Promise<Connection> {
+  if (cached.conn) {
+    return cached.conn;
   }
-};
+
+  if (!cached.promise) {
+    cached.promise = mongoose
+      .connect(MONGODB_URI!)
+      .then(async (mongooseInstance) => {
+        console.log("Connected to MongoDB");
+
+        // FORZAMOS EL REGISTRO DEL MODELO "users" PARA QUE EL POPULATE FUNCIONE
+        await import('@/app/models/user'); // Esto registra el modelo User
+        if (!mongoose.models.users) {
+          const UserSchema = (await import('@/app/models/user')).default.schema;
+          mongoose.model('users', UserSchema);
+        }
+
+        return mongooseInstance.connection;
+      })
+      .catch((err) => {
+        console.error("MongoDB connection error:", err);
+        throw err;
+      });
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
