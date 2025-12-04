@@ -1,4 +1,5 @@
 'use client';
+
 import Image from 'next/image';
 import React, { useState, useEffect, MouseEventHandler } from 'react';
 import { Structure, structures, structuresForBackend } from '../edificios/utils/StructuresData';
@@ -11,43 +12,41 @@ interface MostrarProps {
 }
 
 const Mostrar: React.FC<MostrarProps> = ({ map, buildings, units, userId }) => {
+  // Estado del cursor y construcción
   const [showCursorMarker, setShowCursorMarker] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
+
+  // Estado del backend
   const [userInstance, setUserInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBuilding, setIsBuilding] = useState(false); // Evita doble click
 
-  // -------------------------------
-  // Cargar userInstance desde el backend
-  // -------------------------------
+  // -------------------------------------------------
+  // Cargar datos completos del usuario desde el backend
+  // -------------------------------------------------
   const fetchUserInstance = async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/user_instance/${userId}`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${await response.text()}`);
-      }
+      if (!response.ok) throw new Error(`Error ${response.status}`);
       const data = await response.json();
-      console.log('userInstance cargado:', JSON.stringify(data, null, 2));
       setUserInstance(data);
-      setIsLoading(false);
     } catch (error) {
-      console.error('Error al cargar userInstance:', error);
+      console.error('Error cargando userInstance:', error);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // --------------------------------
-  // SOLO cargar una vez o cuando cambie el userId
-  // --------------------------------
+  // Carga solo cuando cambia el userId
   useEffect(() => {
-    console.log('userId recibido:', userId);
-    fetchUserInstance();
+    if (userId) fetchUserInstance();
   }, [userId]);
 
-  // --------------------------------
-  // Obtener posición del mouse
-  // --------------------------------
+  // -------------------------------------------------
+  // Seguimiento del mouse → posición en celdas (20x20)
+  // -------------------------------------------------
   const handleMouseMove: MouseEventHandler = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) / 20);
@@ -55,9 +54,9 @@ const Mostrar: React.FC<MostrarProps> = ({ map, buildings, units, userId }) => {
     setCursorPosition({ x, y });
   };
 
-  // --------------------------------
-  // Seleccionar edificio a construir
-  // --------------------------------
+  // -------------------------------------------------
+  // Seleccionar edificio para construir
+  // -------------------------------------------------
   const handleBuildingSelect = (buildingType: string) => {
     if ((userInstance?.level || 1) === 1 && buildingType !== 'ayuntamiento') {
       alert('En el nivel 1 solo puedes construir el ayuntamiento.');
@@ -67,192 +66,165 @@ const Mostrar: React.FC<MostrarProps> = ({ map, buildings, units, userId }) => {
     setShowCursorMarker(true);
   };
 
- // --------------------------------
-// Construir edificio en el mapa
-// --------------------------------
-const [isBuilding, setIsBuilding] = useState(false);
+  // -------------------------------------------------
+  // CONSTRUIR EDIFICIO AL HACER CLICK
+  // -------------------------------------------------
+  const handleMapClick = async () => {
+    if (!selectedBuilding || !userInstance || isLoading || isBuilding) return;
 
-const handleMapClick = async () => {
-  if (!selectedBuilding || !userInstance || isLoading || isBuilding) {
-    console.log('Click ignorado: ', { selectedBuilding, isLoading, isBuilding });
-    return;
-  }
+    setIsBuilding(true);
 
-  setIsBuilding(true);
-  console.log('handleMapClick iniciado');
-
-  const structure = structuresForBackend.find((s) => s.type === selectedBuilding);
-  if (!structure) {
-    alert('Edificio no válido.');
-    setIsBuilding(false);
-    return;
-  }
-
-  const hasTownHall =
-    userInstance.buildings.some((b: any) => b.type === 'ayuntamiento') ||
-    buildings.some((b: any) => b.type === 'ayuntamiento');
-
-  if (hasTownHall && selectedBuilding === 'ayuntamiento') {
-    alert('Ya has construido un ayuntamiento.');
-    setIsBuilding(false);
-    return;
-  }
-
-  if (userInstance.map.grid[cursorPosition.y]?.[cursorPosition.x] === 'agua') {
-    alert('No puedes construir en agua.');
-    setIsBuilding(false);
-    return;
-  }
-
-  if ((userInstance.level || 1) >= 2) {
-    const idleVillagers = userInstance.units.filter(
-      (u: any) => u.type === 'villager' && u.status === 'idle'
-    ).length;
-
-    if (idleVillagers < (structure.requiredVillagers || 1)) {
-      alert('Se requiere al menos un aldeano disponible para construir.');
+    const structure = structuresForBackend.find(s => s.type === selectedBuilding);
+    if (!structure) {
+      alert('Edificio no válido.');
       setIsBuilding(false);
       return;
     }
 
-    for (const [resource, amount] of Object.entries(structure.cost)) {
-      const userResource = userInstance.resources.find((r: any) => r.resource === resource);
-      if (!userResource || userResource.amount < (amount as number)) {
-        alert(`No tienes suficientes recursos: ${resource} (${amount} requerido).`);
+    // Validaciones
+    const hasTownHall = userInstance.buildings.some((b: any) => b.type === 'ayuntamiento');
+    if (hasTownHall && selectedBuilding === 'ayuntamiento') {
+      alert('Ya tienes un ayuntamiento.');
+      setIsBuilding(false);
+      return;
+    }
+
+    if (map[cursorPosition.y]?.[cursorPosition.x] === 'water') {
+      alert('No puedes construir en agua.');
+      setIsBuilding(false);
+      return;
+    }
+
+    // Recursos y aldeanos (solo a partir del nivel 2)
+    if (userInstance.level >= 2) {
+      const idleVillagers = userInstance.units.filter((u: any) => u.type === 'villager' && u.status === 'idle').length;
+      if (idleVillagers < (structure.requiredVillagers || 1)) {
+        alert('No tienes aldeanos libres para construir.');
         setIsBuilding(false);
         return;
       }
+
+      for (const [res, cost] of Object.entries(structure.cost)) {
+        const userRes = userInstance.resources.find((r: any) => r.resource === res);
+        if (!userRes || userRes.amount < (cost as number)) {
+          alert(`Te falta ${res}: necesitas ${cost}`);
+          setIsBuilding(false);
+          return;
+        }
+      }
     }
-  }
 
-  const building = {
-    id: Date.now(),
-    type: selectedBuilding,
-    position: { x: cursorPosition.x + 50, y: cursorPosition.y + 50 },
-    obreros: structure.obreros || 0,
-    maxObreros: structure.maxObreros || 0,
-    capacity: structure.capacity || 0,
-   
-    maxCap: structure.maxCapacity,
-    level: structure.level || 1,
-    updateTime: structure.updateTime,
-    aumentar: structure.aumentar || false,
-  };
+    // Crear edificio
+    const newBuilding = {
+      id: Date.now(),
+      type: selectedBuilding,
+      position: { x: cursorPosition.x + 50, y: cursorPosition.y + 50 },
+      obreros: 0,
+      maxObreros: structure.maxObreros || 0,
+      capacity: structure.capacity || 0,
+      maxCap: structure.maxCapacity,
+      level: structure.level || 1,
+      updateTime: structure.updateTime,
+      aumentar: structure.aumentar || false,
+    };
 
-  const updatedResources = userInstance.resources.map((r: any) => {
-    const costAmount = structure.cost[r.resource as keyof typeof structure.cost] as number | undefined;
-    return costAmount !== undefined ? { ...r, amount: r.amount - costAmount } : r;
-  });
-
-  console.log('Enviando PATCH con building:', building);
-
-  try {
-    const response = await fetch(`/api/user_instance/${userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        building,
-        resources: (userInstance.level || 1) >= 2 ? updatedResources : userInstance.resources,
-        population: userInstance.population,
-      }),
+    // Descontar recursos
+    const updatedResources = userInstance.resources.map((r: any) => {
+      const cost = structure.cost[r.resource as keyof typeof structure.cost];
+      return cost ? { ...r, amount: r.amount - (cost as number) } : r;
     });
 
-    if (response.ok) {
-      const updatedInstance = await response.json();
-      console.log('userInstance actualizado después de construir:', updatedInstance);
+    try {
+      const res = await fetch(`/api/user_instance/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          building: newBuilding,
+          resources: userInstance.level >= 2 ? updatedResources : userInstance.resources,
+        }),
+      });
 
-      setUserInstance(updatedInstance);
-      await fetchUserInstance();
-
-      setShowCursorMarker(false);
-      setSelectedBuilding(null);
-    } else {
-      const error = await response.json();
-      console.error('Error al construir edificio:', error);
-      alert(`Error: ${error.error || 'No se pudo construir el edificio.'}`);
-    }
-  } catch (err) {
-    console.error('Error en fetch:', err);
-  } finally {
-    setIsBuilding(false);
-    console.log('handleMapClick finalizado');
-  }
-};
-
-
-  // --------------------------------
-  // Obtener la imagen del edificio
-  // --------------------------------
-  const getBuildingImage = (type: string) => {
-    switch (type) {
-      case 'lumber': return '/madera_generador.png';
-      case 'gold_mine': return '/gold_mine.png';
-      case 'stone_mine': return '/stone_mine.png';
-      case 'ayuntamiento': return '/casa_oracion.png';
-      case 'shipyard': return '/port.png';
-      case 'mill': return '/molino.png';
-      case 'house': return '/casaD.png';
-      case 'barracks': return '/cuartel.png';
-      default: return '/default.png';
+      if (res.ok) {
+        const updated = await res.json();
+        setUserInstance(updated);
+        setSelectedBuilding(null);
+        setShowCursorMarker(false);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Error al construir');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de red');
+    } finally {
+      setIsBuilding(false);
     }
   };
 
-  const hasTownHall =
-    userInstance?.buildings?.some((b: any) => b.type === 'ayuntamiento') ||
-    buildings.some((b: any) => b.type === 'ayuntamiento') ||
-    false;
+  // -------------------------------------------------
+  // Imagen según tipo de edificio
+  // -------------------------------------------------
+  const getBuildingImage = (type: string) => {
+    const images: Record<string, string> = {
+      lumber: '/madera_generador.png',
+      gold_mine: '/gold_mine.png',
+      stone_mine: '/stone_mine.png',
+      ayuntamiento: '/casa_oracion.png',
+      shipyard: '/port.png',
+      mill: '/molino.png',
+      house: '/casaD.png',
+      barracks: '/cuartel.png',
+    };
+    return images[type] || '/default.png';
+  };
 
+  // Nivel actual y estructuras disponibles
   const currentLevel = userInstance?.level || 1;
+  const hasTownHall = userInstance?.buildings?.some((b: any) => b.type === 'ayuntamiento');
 
-  const availableStructures = structures.filter((structure) => {
-    if (structure.type === 'ayuntamiento' && (hasTownHall || currentLevel >= 2)) {
-      return false;
-    }
-    return structure.desbloqueo <= currentLevel;
+  const availableStructures = structures.filter(s => {
+    if (s.type === 'ayuntamiento' && (hasTownHall || currentLevel >= 2)) return false;
+    return s.desbloqueo <= currentLevel;
   });
 
-  if (isLoading) {
-    return <div className="text-white">Cargando datos del usuario...</div>;
-  }
+  if (isLoading) return <div className="text-white text-2xl">Cargando tu aldea...</div>;
 
   return (
-    <div className="w-full h-full relative" onMouseMove={handleMouseMove} onClick={handleMapClick}>
-      
-      {/* -------------------------------- */}
-      {/* Botones para construir edificios */}
-      {/* -------------------------------- */}
-      <div className="absolute top-4 left-4 flex flex-col gap-2">
-        {availableStructures.map((structure) => (
+    <div
+      className="w-full h-screen relative overflow-hidden bg-black"
+      onMouseMove={handleMouseMove}
+      onClick={handleMapClick}
+    >
+      {/* BOTONES DE CONSTRUCCIÓN */}
+      <div className="absolute top-4 left-4 z-50 flex flex-col gap-3 bg-black/70 p-4 rounded-lg">
+        {availableStructures.map(s => (
           <button
-            key={structure.type}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md"
-            onClick={() => handleBuildingSelect(structure.type)}
+            key={s.type}
+            onClick={() => handleBuildingSelect(s.type)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium transition"
           >
-            {structure.name}{' '}
-            {currentLevel === 1 && structure.type === 'ayuntamiento'
+            {s.name}{' '}
+            {currentLevel === 1 && s.type === 'ayuntamiento'
               ? '(Gratis)'
-              : `(${Object.entries(structure.cost)
-                  .filter(([_, amt]) => amt !== undefined)
-                  .map(([res, amt]) => `${amt} ${res}`)
+              : `(${Object.entries(s.cost)
+                  .map(([r, a]) => `${a} ${r}`)
                   .join(', ')})`}
           </button>
         ))}
       </div>
 
-      {/* Cursor de construcción */}
+      {/* MARCADOR DE CURSOR */}
       {showCursorMarker && (
         <div
-          className="absolute w-4 h-4 bg-green-500 rounded-full pointer-events-none"
-          style={{ left: cursorPosition.x * 20, top: cursorPosition.y * 20 }}
-        ></div>
+          className="absolute w-6 h-6 border-4 border-green-400 rounded-full pointer-events-none z-40 animate-pulse"
+          style={{ left: cursorPosition.x * 20 - 8, top: cursorPosition.y * 20 - 8 }}
+        />
       )}
 
-      {/* Mapa */}
+      {/* FONDO + GRID */}
       <div
+        className="absolute inset-0"
         style={{
-          position: 'absolute',
-          width: 2000,
-          height: 500,
           backgroundImage: `url(/Mapaage.jpg)`,
           backgroundSize: 'cover',
         }}
@@ -260,80 +232,67 @@ const handleMapClick = async () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: `repeat(100, 20px)`,
-            gridTemplateRows: `repeat(25, 20px)`,
-            width: 2000,
-            height: 500,
-            opacity: 0.5,
+            gridTemplateColumns: 'repeat(100, 20px)',
+            gridTemplateRows: 'repeat(25, 20px)',
+            opacity: 0.3,
           }}
         >
-          {Array.from({ length: 25 }).map((_, y) =>
-            Array.from({ length: 100 }).map((_, x) => (
-              <div
-                key={`${x}-${y}`}
-                style={{ border: '1px solid rgba(0, 0, 0, 0.1)' }}
-              ></div>
+          {Array.from({ length: 25 }, (_, y) =>
+            Array.from({ length: 100 }, (_, x) => (
+              <div key={`${x}-${y}`} className="border border-gray-800" />
             ))
           )}
         </div>
       </div>
 
-      {/* Render del mapa, edificios, unidades */}
-      {map && (
-        <div>
-          {/* Árboles y palmeras */}
-          {map.slice(0, 25).flatMap((row, y) =>
-            row.map((cell, x) => {
-              if (cell === 'tree' || cell === 'palm') {
-                return (
-                  <Image
-                    key={`${x}-${y}`}
-                    src={cell === 'tree' ? '/tree.png' : '/palmera.png'}
-                    alt={cell}
-                    width={20}
-                    height={20}
-                    style={{ position: 'absolute', left: x * 20, top: y * 20 }}
-                  />
-                );
-              }
-              return null;
-            })
-          )}
-
-          {/* Edificios */}
-          {buildings.map((building) => (
+      {/* RECURSOS NATURALES (árboles, palmeras) */}
+      {map.slice(0, 25).flatMap((row, y) =>
+        row.map((cell, x) =>
+          (cell === 'tree' || cell === 'palm') ? (
             <Image
-              key={`${building.type}-${building.id}`}
-              src={getBuildingImage(building.type)}
-              alt={building.type}
+              key={`${x}-${y}`}
+              src={cell === 'tree' ? '/tree.png' : '/palmera.png'}
+              alt={cell}
               width={40}
               height={40}
-              style={{
-                position: 'absolute',
-                left: (building.position!.x - 50) * 20,
-                top: (building.position!.y - 50) * 20,
-              }}
+              className="absolute"
+              style={{ left: x * 20 - 10, top: y * 20 - 20 }}
             />
-          ))}
-
-          {/* Unidades (aldeanos) */}
-          {(userInstance?.units ?? units)?.map((unit: any) => (
-            <Image
-              key={unit.id}
-              src="/Aldeano.png"
-              alt="villager"
-              width={20}
-              height={20}
-              style={{
-                position: "absolute",
-                left: (unit.position?.x ?? 0) * 20,
-                top: (unit.position?.y ?? 0) * 20,
-                transform: "translate(-50%, -50%)",
-              }}
-            />
-          ))}
-        </div>
+          ) : null
+        )
       )}
+
+      {/* EDIFICIOS */}
+      {buildings.map(b => (
+        <Image
+          key={b.id}
+          src={getBuildingImage(b.type)}
+          alt={b.type}
+          width={60}
+          height={60}
+          className="absolute drop-shadow-lg"
+          style={{
+            left: (b.position!.x - 50) * 20 - 20,
+            top: (b.position!.y - 50) * 20 - 20,
+          }}
+        />
+      ))}
+
+      {/* UNIDADES (aldeanos y soldados) */}
+      {(userInstance?.units ?? units).map((unit: any) => (
+        <Image
+          key={unit.id}
+          src="/Aldeano.png"
+          alt="unit"
+          width={30}
+          height={30}
+          className="absolute drop-shadow-md"
+          style={{
+            left: (unit.position?.x ?? 0) * 20 - 15,
+            top: (unit.position?.y ?? 0) * 20 - 15,
+          }}
+        />
+      ))}
     </div>
   );
 };

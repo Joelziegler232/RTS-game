@@ -1,4 +1,4 @@
-// src/app/models/instance.ts
+
 import { Schema, model, models, Document } from 'mongoose';
 
 // ===========================
@@ -39,8 +39,8 @@ interface IBattleReport {
   attackerId: string;
   attackerName?: string;
   timestamp: Date;
-  attackerWins: boolean;        // true = el atacante ganó (defensor perdió)
-  losses: number;               // soldados que perdió el defensor
+  attackerWins: boolean;     
+  losses: number;              
   stolenResources: Record<string, number>;
   attackerTroopsSent: number;
   defenderTroops: number;

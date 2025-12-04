@@ -1,4 +1,3 @@
-// src/app/edificios/components/creacionMenu.tsx
 'use client';
 import Units from '@/app/generadores/objects/Units';
 import { User } from '@/app/objects/user';
@@ -55,64 +54,69 @@ export default function CreacionMenu({
   millArray,
   soldierCount,
 }: CreacionMenuProps) {
-  const [creacionMenu, setCreacionMenu] = useState(true); // true = menú cerrado
+  const [creacionMenu, setCreacionMenu] = useState(true); 
   const [isCreatingUnit, setIsCreatingUnit] = useState(false);
 
-  // Solo cambia esta función handleCreateVillager
-const handleCreateVillager = async () => {
-  // SI YA HAY UNO EN COLA O CREÁNDOSE → NO HACEMOS NADA
-  if (quantity > 0) {
-    // OPCIONAL: sonido o mensaje
-    return;
-  }
-
-  try {
-    const aldeanosTrabajando =
-      (lumberCampArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
-      (goldMineArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
-      (stoneMineArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
-      (millArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0);
-
-    const poblacionActual = playerVillagers + aldeanosTrabajando + soldierCount;
-
-    if (poblacionActual + 1 > playerPopulationCap) {
-      alert(`Límite de población alcanzado: ${poblacionActual}/${playerPopulationCap}`);
+  // Función para crear un aldeano
+  const handleCreateVillager = async () => {
+    // Si ya hay uno en cola → no permitimos crear otro
+    if (quantity > 0) {
       return;
     }
 
-    if (playerFood < 20) {
-      alert('No tienes suficiente comida (20)');
-      return;
+    try {
+      // Calculamos cuántos aldeanos están trabajando en edificios
+      const aldeanosTrabajando =
+        (lumberCampArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
+        (goldMineArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
+        (stoneMineArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0) +
+        (millArray?.reduce((sum, b) => sum + (b.obreros || 0), 0) || 0);
+
+      // Población total actual (aldeanos libres + obreros + soldados)
+      const poblacionActual = playerVillagers + aldeanosTrabajando + soldierCount;
+
+      // Validación: límite de población
+      if (poblacionActual + 1 > playerPopulationCap) {
+        alert(`Límite de población alcanzado: ${poblacionActual}/${playerPopulationCap}`);
+        return;
+      }
+
+      // Validación: comida suficiente
+      if (playerFood < 20) {
+        alert('No tienes suficiente comida (20)');
+        return;
+      }
+
+      // Descontamos la comida localmente
+      setPlayerFood(prev => prev - 20);
+
+      // Actualizamos en el backend
+      await fetch(`/api/user_instance/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resources: [{ resource: 'food', amount: playerFood - 20 }]
+        })
+      });
+
+      // Iniciamos la creación del aldeano
+      setUnit(units_Array[0]);
+      setQuantity(1);  
+      setProgressBar(true);
+
+    } catch (error) {
+      console.error("Error:", error);
+      // Si falla, devolvemos la comida
+      setPlayerFood(prev => prev + 20);
+      alert("Error al iniciar creación");
     }
-
-    // DESCONTAR COMIDA
-    setPlayerFood(prev => prev - 20);
-
-    await fetch(`/api/user_instance/${user.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        resources: [{ resource: 'food', amount: playerFood - 20 }]
-      })
-    });
-
-    // SOLO UNO EN COLA
-    setUnit(units_Array[0]);
-    setQuantity(1);  // ← siempre 1
-    setProgressBar(true);
-
-  } catch (error) {
-    console.error("Error:", error);
-    setPlayerFood(prev => prev + 20);
-    alert("Error al iniciar creación");
-  }
-};
+  };
 
   if (!ayunMenu) return null;
 
   return (
     <main>
-      {/* MENÚ DE UNIDADES */}
+      {/* MENÚ DE UNIDADES  */}
       <div className={`fixed bottom-0 h-[100px] w-screen flex flex-row bg-transparent transition-all duration-300 ${creacionMenu ? 'translate-y-full' : 'translate-y-0'}`}>
         {units_Array.map((unit, index) => (
           <div
@@ -120,6 +124,7 @@ const handleCreateVillager = async () => {
             className="sidebar-icon group cursor-pointer hover:scale-110 transition-transform"
             onClick={handleCreateVillager}
             style={{
+              // Deshabilitamos visualmente si no hay comida o ya hay uno en cola
               opacity: playerFood < 20 || isCreatingUnit ? 0.5 : 1,
               pointerEvents: playerFood < 20 || isCreatingUnit ? 'none' : 'auto'
             }}
@@ -136,7 +141,7 @@ const handleCreateVillager = async () => {
         ))}
       </div>
 
-      {/* BOTÓN AZUL QUE SOLO ABRE/CIERRA EL MENÚ */}
+      {/* BOTÓN PRINCIPAL  */}
       <button
         onClick={() => setCreacionMenu(!creacionMenu)}
         className={`

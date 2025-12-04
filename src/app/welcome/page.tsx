@@ -1,4 +1,4 @@
-// src/welcome/page.tsx
+
 "use client";
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export default function WelcomePage() {
   }
 
   if (!session) {
-    return null; // El useEffect manejará la redirección
+    return null; 
   }
 
   return (
@@ -67,9 +67,7 @@ export default function WelcomePage() {
         >
           Cerrar sesión
         </button>
-        <div className="mt-10">
-          {/* Espacio para información futura, como estadísticas */}
-        </div>
+        
       </div>
     </main>
   );

@@ -1,4 +1,3 @@
-// src/app/forgot-password/page.tsx
 "use client";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";

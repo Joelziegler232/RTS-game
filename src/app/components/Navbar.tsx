@@ -12,18 +12,17 @@ function Navbar() {
         <Link href="/">
           <a className='font-bold text-xl'>RTS</a>
         </Link>
+
         {/* Menú de navegación */}
         <ul className='flex gap-x-2'>
-          {/* Verificar si hay una sesión activa */}
+          {/* Si no hay sesión → mostrar Login y Register */}
           {!session && (
             <>
-              {/* Enlace para iniciar sesión */}
               <li>
                 <Link href="/login" passHref>
                   <a className='px-4 py-2 bg-blue-500 text-white rounded'>Login</a>
                 </Link>
               </li>
-              {/* Enlace para registrarse */}
               <li>
                 <Link href="/register" passHref>
                   <a className='px-4 py-2 bg-blue-500 text-white rounded'>Register</a>
@@ -31,7 +30,8 @@ function Navbar() {
               </li>
             </>
           )}
-          {/* Enlace al inicio */}
+
+          {/* Botón Home siempre visible */}
           <li>
             <Link href="/welcome" passHref>
               <a className='px-4 py-2 bg-blue-500 text-white rounded'>Home</a>

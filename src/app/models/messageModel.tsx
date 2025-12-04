@@ -1,4 +1,4 @@
-// src/app/models/messageModel.ts
+
 import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema({

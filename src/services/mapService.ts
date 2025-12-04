@@ -1,4 +1,4 @@
-// src/services/mapService.ts
+
 export const fetchMaps = async () => {
     // Usa la ruta relativa desde la raíz del dominio para el cliente
     const response = await fetch("/api/map");

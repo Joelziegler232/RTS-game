@@ -9,15 +9,15 @@ export default function BarracksDetails({
   onTrainSoldier,
   playerLevel,
   trainingData,
-  onSearchBattle, // 🆕 NUEVO PROP
+  onSearchBattle,
 }: {
   cuartel: Structure;
-  state: boolean;
-  buildingId: number;
-  onTrainSoldier: (bId: number) => void;
-  playerLevel: number;
-  trainingData?: { id: number; progress: number } | null;
-  onSearchBattle: () => void; // 🆕 NUEVO PROP
+  state: boolean;                    
+  buildingId: number;                
+  onTrainSoldier: (bId: number) => void;  
+  playerLevel: number;            
+  trainingData?: { id: number; progress: number } | null;  
+  onSearchBattle: () => void;        
 }) {
   if (!state || buildingId !== cuartel.id) return null;
 
@@ -35,25 +35,26 @@ export default function BarracksDetails({
         zIndex: 2000,
         width: "300px",
         textAlign: "center",
+        boxShadow: "0 0 20px rgba(0,0,0,0.8)",
       }}
     >
+      {/* Título del cuartel */}
       <h2
         style={{
-          fontSize: "18px",
-          marginBottom: "10px",
+          fontSize: "20px",
+          marginBottom: "12px",
           fontWeight: "bold",
+          textShadow: "0 2px 4px rgba(0,0,0,0.8)",
         }}
       >
         Cuartel
       </h2>
 
-      {/* ============================
-            ENTRENAR SOLDADO
-      ============================ */}
+      {/* BOTÓN: Entrenar soldado */}
       <button
         style={{
           marginTop: "10px",
-          padding: "10px",
+          padding: "12px",
           background: "#2196F3",
           border: "none",
           color: "white",
@@ -61,22 +62,27 @@ export default function BarracksDetails({
           cursor: "pointer",
           width: "100%",
           fontSize: "16px",
+          fontWeight: "bold",
+          transition: "all 0.2s",
         }}
         onClick={() => onTrainSoldier(buildingId)}
+        onMouseOver={(e) => e.currentTarget.style.background = "#1976D2"}
+        onMouseOut={(e) => e.currentTarget.style.background = "#2196F3"}
       >
-        Entrenar Soldado (30 comida 🍗)
+        Entrenar Soldado (30 comida)
       </button>
 
-      {/* Barra de progreso de entrenamiento */}
+      {/* BARRA DE PROGRESO del entrenamiento */}
       {trainingData?.id === buildingId && (
-        <div style={{ marginTop: "10px" }}>
+        <div style={{ marginTop: "14px" }}>
           <div
             style={{
               width: "100%",
-              height: "12px",
+              height: "14px",
               background: "#333",
-              borderRadius: "6px",
+              borderRadius: "7px",
               overflow: "hidden",
+              border: "1px solid #555",
             }}
           >
             <div
@@ -84,53 +90,59 @@ export default function BarracksDetails({
                 width: `${trainingData.progress}%`,
                 height: "100%",
                 background: "#4CAF50",
-                transition: "width 0.1s",
+                transition: "width 0.3s ease",
               }}
             />
           </div>
-
-          <p style={{ marginTop: "5px", fontSize: "12px" }}>
-            Entrenando soldado...
+          <p style={{ marginTop: "6px", fontSize: "13px", color: "#a0e0a0" }}>
+            Entrenando soldado... {trainingData.progress}%
           </p>
         </div>
       )}
 
-      {/* ============================
-            BUSCAR BATALLA (A PARTIR NIVEL 3)
-      ============================ */}
+      {/* BOTÓN: Buscar batalla (solo si nivel >= 3) */}
       {playerLevel >= 3 && (
         <button
           style={{
-            marginTop: "15px",
-            padding: "10px",
+            marginTop: "18px",
+            padding: "14px",
             background: "#9C27B0",
             border: "none",
             color: "white",
-            borderRadius: "8px",
+            borderRadius: "10px",
             cursor: "pointer",
             width: "100%",
-            fontSize: "16px",
+            fontSize: "18px",
             fontWeight: "bold",
+            boxShadow: "0 4px 10px rgba(156, 39, 176, 0.5)",
+            transition: "all 0.3s",
           }}
-          onClick={onSearchBattle} // 🟣 ACÁ LLAMAMOS A LA FUNCIÓN REAL
+          onClick={onSearchBattle}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "#7B1FA2";
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "#9C27B0";
+            e.currentTarget.style.transform = "scale(1)";
+          }}
         >
-          🔥 BUSCAR BATALLA
+          BUSCAR BATALLA
         </button>
       )}
 
-      {/* -----------------------------
-            CERRAR MENÚ
-      ----------------------------- */}
+      {/* BOTÓN: Cerrar menú */}
       <button
         style={{
-          marginTop: "10px",
-          padding: "6px",
+          marginTop: "16px",
+          padding: "8px",
           background: "#d9534f",
           border: "none",
           color: "white",
-          borderRadius: "8px",
+          borderRadius: "6px",
           cursor: "pointer",
           width: "100%",
+          fontSize: "14px",
         }}
         onClick={() =>
           window.dispatchEvent(new CustomEvent("closeBuildingMenu"))

@@ -2,6 +2,9 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// ================================================
+// CARD PRINCIPAL – Contenedor con borde y sombra
+// ================================================
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -17,6 +20,9 @@ const Card = React.forwardRef<
 ))
 Card.displayName = "Card"
 
+// ================================================
+// HEADER – Área superior del card (título + descripción)
+// ================================================
 const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -29,6 +35,9 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
+// ================================================
+// TÍTULO – <h3> grande y destacado
+// ================================================
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
@@ -44,6 +53,9 @@ const CardTitle = React.forwardRef<
 ))
 CardTitle.displayName = "CardTitle"
 
+// ================================================
+// DESCRIPCIÓN – Texto pequeño y secundario
+// ================================================
 const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
@@ -56,6 +68,9 @@ const CardDescription = React.forwardRef<
 ))
 CardDescription.displayName = "CardDescription"
 
+// ================================================
+// CONTENIDO – Área principal del card
+// ================================================
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -64,6 +79,9 @@ const CardContent = React.forwardRef<
 ))
 CardContent.displayName = "CardContent"
 
+// ================================================
+// FOOTER – Área inferior (botones, acciones, etc.)
+// ================================================
 const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -76,4 +94,12 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+// Exportamos todos los subcomponentes
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+}

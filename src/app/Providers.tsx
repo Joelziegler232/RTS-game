@@ -7,7 +7,7 @@ interface Props {
 }
 
 function Providers({ children }: Props) {
-  // Proveedor de sesión de NextAuth para gestionar la autenticación
+
   return <SessionProvider>{children}</SessionProvider>;
 }
 

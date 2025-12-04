@@ -1,9 +1,12 @@
+
 import mongoose, { Connection } from "mongoose";
 
 const { MONGODB_URI } = process.env;
 
 if (!MONGODB_URI) {
-  throw new Error("No MONGODB_URI provided");
+  throw new Error(
+    "Por favor define la variable de entorno MONGODB_URI en tu .env.local"
+  );
 }
 
 interface MongooseCache {
@@ -21,18 +24,21 @@ if (!cached) {
 }
 
 export async function connect(): Promise<Connection> {
+
   if (cached.conn) {
     return cached.conn;
   }
 
   if (!cached.promise) {
     cached.promise = mongoose
-      .connect(MONGODB_URI!)
+      .connect(MONGODB_URI!, {
+        bufferCommands: false, 
+      })
       .then(async (mongooseInstance) => {
-        console.log("Connected to MongoDB");
+        console.log("Conectado a MongoDB correctamente");
 
-        // FORZAMOS EL REGISTRO DEL MODELO "users" PARA QUE EL POPULATE FUNCIONE
-        await import('@/app/models/user'); // Esto registra el modelo User
+        await import('@/app/models/user');
+
         if (!mongoose.models.users) {
           const UserSchema = (await import('@/app/models/user')).default.schema;
           mongoose.model('users', UserSchema);
@@ -41,7 +47,8 @@ export async function connect(): Promise<Connection> {
         return mongooseInstance.connection;
       })
       .catch((err) => {
-        console.error("MongoDB connection error:", err);
+        console.error("Error al conectar con MongoDB:", err);
+        cached.promise = null; 
         throw err;
       });
   }

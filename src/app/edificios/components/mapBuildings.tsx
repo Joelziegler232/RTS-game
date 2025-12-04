@@ -495,7 +495,7 @@ const barracksMenu = useCallback(
   ...ayuntamientoArray,
   ...barracksArray,
   ...shipyardArray,
-  ...marketArray  // AQUÍ ESTÁ LA CLAVE
+  ...marketArray  
 ].forEach((building) => {
   const texture = buildingTextures[building.type as keyof typeof buildingTextures];
   
@@ -573,11 +573,6 @@ const barracksMenu = useCallback(
   // Texturas cargadas UNA sola vez
 const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
 
-
-
-
-
-  
   const updateHighlight = (tileX: number, tileY: number, isValid: boolean) => {
     
     if (highlightMeshRef.current) {
@@ -647,7 +642,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
             draggingBuilding.position.set(tileX - 50 + 0.5, 0.5, tileY - 50 + 0.5);
 
             const tile = gameMap[tileY][tileX];
-            // Verificar si la casilla está ocupada
+            
             const isOccupied = [
               ...lumberCampArray,
               ...goldMineArray,
@@ -820,11 +815,9 @@ const newStructure: Structure = {
                   }
                   return;
                 }
-
-                // === ÉXITO: el backend guardó el edificio ===
+               
                 const data = await response.json();
-
-                // Actualizamos TODOS los edificios desde el backend (esto es la verdad absoluta)
+                
                 setLumberCampArray(data.buildings.filter((b: any) => b.type === "lumber"));
                 setGoldMineArray(data.buildings.filter((b: any) => b.type === "gold_mine"));
                 setStoneMineArray(data.buildings.filter((b: any) => b.type === "stone_mine"));
@@ -835,10 +828,8 @@ const newStructure: Structure = {
                 
                 setMarketArray(data.buildings.filter((b: any) => b.type === "mercado") || []);
 
-                // Disparamos evento para que page.tsx recargue recursos
                 window.dispatchEvent(new CustomEvent("buildingPlaced"));
 
-                // Sprite permanente (el que se queda para siempre)
                 const material = draggingBuilding.material.clone();
                 material.opacity = 1;
                 const permanentSprite = new THREE.Sprite(material);
@@ -847,9 +838,6 @@ const newStructure: Structure = {
                 permanentSprite.userData = { id: newStructure.id, type: selectedStructure.type };
                 sceneRef.current.add(permanentSprite);
 
-              
-
-                // Limpieza final
                 sceneRef.current.remove(draggingBuilding);
                 setDraggingBuilding(null);
                 setStructure(null);
@@ -858,8 +846,6 @@ const newStructure: Structure = {
                   sceneRef.current.remove(highlightMeshRef.current);
                   highlightMeshRef.current = null;
                 }
-
-                
                 
               } catch (error) {
                 console.error('Error en la solicitud al backend:', error);
@@ -1048,7 +1034,7 @@ const newStructure: Structure = {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        assignVillager: { id: buildingId } // ← correcto
+        assignVillager: { id: buildingId } 
       }),
     });
 
@@ -1056,13 +1042,11 @@ const newStructure: Structure = {
 
     const updatedInstance = await response.json();
 
-    // ACTUALIZAR TODO CON DATOS REALES DEL BACKEND
     setLumberCampArray(updatedInstance.buildings.filter((b: any) => b.type === "lumber"));
     setGoldMineArray(updatedInstance.buildings.filter((b: any) => b.type === "gold_mine"));
     setStoneMineArray(updatedInstance.buildings.filter((b: any) => b.type === "stone_mine"));
     setMillArray(updatedInstance.buildings.filter((b: any) => b.type === "mill"));
 
-    // Opcional: disparar evento global si usas uno
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updatedInstance }));
 
   } catch (err) {
@@ -1077,7 +1061,7 @@ const removeVillager = async (buildingId: number) => {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        removeVillagerFromBuilding: { id: buildingId } // ← CLAVE: este es el nombre correcto
+        removeVillagerFromBuilding: { id: buildingId } 
       }),
     });
 
@@ -1085,13 +1069,11 @@ const removeVillager = async (buildingId: number) => {
 
     const updatedInstance = await response.json();
 
-    // ACTUALIZAR TODOS LOS ESTADOS CON LO QUE DEVUELVE EL BACKEND
     setLumberCampArray(updatedInstance.buildings.filter((b: any) => b.type === "lumber"));
     setGoldMineArray(updatedInstance.buildings.filter((b: any) => b.type === "gold_mine"));
     setStoneMineArray(updatedInstance.buildings.filter((b: any) => b.type === "stone_mine"));
     setMillArray(updatedInstance.buildings.filter((b: any) => b.type === "mill"));
 
-    // También actualiza población si la mostrás en algún lado
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updatedInstance }));
 
   } catch (err) {
@@ -1102,7 +1084,7 @@ const removeVillager = async (buildingId: number) => {
 
 
 const trainSoldier = async (buildingId: number) => {
-  // Validaciones
+ 
   if (playerFood < 30) {
     alert("No tienes suficiente comida (30) para entrenar un soldado.");
     return;
@@ -1116,13 +1098,12 @@ const trainSoldier = async (buildingId: number) => {
     return;
   }
 
-  // Descontar comida en frontend
+  
   setPlayerFood(prev => prev - 30);
 
-  // INICIAR BARRA DE PROGRESO EN FRONTEND
+
   setTrainingSoldier({ id: buildingId, progress: 0 });
 
-  // Duración del entrenamiento: 5 segundos
   const duration = 5000;
   const interval = 100;
   let elapsed = 0;
@@ -1164,9 +1145,9 @@ const finishTraining = async (buildingId: number) => {
 
     const updated = await res.json();
 
-    // ACTUALIZAR TODO DESDE BACKEND
+    
     setUnits(updated.units || []);
-    setTrainingSoldier(null); // Limpiar barra
+    setTrainingSoldier(null); 
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updated }));
 
   } catch (err) {
@@ -1192,19 +1173,18 @@ const searchBattle = async () => {
 
     const data = await res.json();
 
-    // Manejar errores del backend
+   
     if (!res.ok) {
       alert(data.error || "Error buscando enemigo");
       return;
     }
 
-    // ⚠️ VALIDAR SI NO HAY ENEMIGO
     if (!data.enemy) {
       alert(data.error || "No hay enemigos disponibles en este momento");
       return;
     }
 
-    // Emitir evento si encontró enemigo
+  
     window.dispatchEvent(new CustomEvent('enemyFound', { detail: data.enemy }));
 
   } catch (err) {
@@ -1236,7 +1216,7 @@ const generadorActualizado: Generadores | null =
       <div ref={mountRef} className={styles.mapContainer} />
       
       {/* UNIDADES EN EL MAPA */}
-            {/* TODOS LOS EDIFICIOS EN UN SOLO ARRAY */}
+            {/* TODOS LOS EDIFICIOS */}
       {(() => {
         const allBuildings = [
           ...lumberCampArray,

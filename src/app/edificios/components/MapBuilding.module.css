@@ -1,102 +1,62 @@
-/* src/app/edificios/components/MapBuilding.module.css */
+/* Contenedor principal del mapa */
 .map {
-    display: inline-grid;
-    gap: 1px;
-    background-color: #ccc;
-    position: relative; /* Aseguramos que sea el contenedor base */
-    z-index: 0; /* Nivel base para el mapa */
-  }
-  
-  .tile {
-    width: 20px;
-    height: 20px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  display: inline-grid;
+  gap: 1px; 
+  background-color: #ccc; 
+  position: relative; 
+  z-index: 0; 
+}
 
-  .mapContainer {
-    width: 100%;
-    height: 100vh;
-  }
-  
-  .grass {
-    background-color: #90ee90;
-  }
-  
-  .water {
-    background-color: #1e90ff;
-  }
-  
-  .sand {
-    background-color: #f4a460;
-  }
-  
-  .forest {
-    background-color: #228b22;
-  }
-  
-  /* Estilos para los edificios */
-  .tile i {
-    position: absolute;
-    z-index: 10; /* Los edificios quedan por encima del mapa */
-    cursor: pointer;
-  }
-  
-  /* Ajuste para las minas de piedra */
-  .tile div {
-    position: absolute;
-    z-index: 10; /* Por encima del mapa */
-  }
-  /* src/app/edificios/components/MapBuilding.module.css */
-.map {
-    display: inline-grid;
-    gap: 1px;
-    background-color: #ccc;
-    position: relative; /* Aseguramos que sea el contenedor base */
-    z-index: 0; /* Nivel base para el mapa */
-  }
-  
-  .tile {
-    width: 20px;
-    height: 20px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+/* Cada casilla del mapa */
+.tile {
+  width: 20px;
+  height: 20px;
+  position: relative; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .mapContainer {
-    width: 100%;
-    height: 100vh;
-  }
-  
-  .grass {
-    background-color: #90ee90;
-  }
-  
-  .water {
-    background-color: #1e90ff;
-  }
-  
-  .sand {
-    background-color: #f4a460;
-  }
-  
-  .forest {
-    background-color: #228b22;
-  }
-  
-  /* Estilos para los edificios */
-  .tile i {
-    position: absolute;
-    z-index: 10; /* Los edificios quedan por encima del mapa */
-    cursor: pointer;
-  }
-  
-  /* Ajuste para las minas de piedra */
-  .tile div {
-    position: absolute;
-    z-index: 10; /* Por encima del mapa */
-  }
+.mapContainer {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden; 
+}
+
+/* TIPOS DE TERRENO */
+.grass {
+  background-color: #90ee90; 
+}
+
+.water {
+  background-color: #1e90ff; 
+}
+
+.sand {
+  background-color: #f4a460; 
+}
+
+.forest {
+  background-color: #228b22; 
+}
+
+/* EDIFICIOS E ICONOS */
+.tile i {
+  position: absolute;
+  z-index: 10; 
+  cursor: pointer;
+  pointer-events: auto; 
+}
+
+.tile div {
+  position: absolute;
+  z-index: 10; 
+  pointer-events: auto;
+}
+
+.tile i:hover,
+.tile div:hover {
+  transform: scale(1.2);
+  filter: brightness(1.3);
+  transition: all 0.2s ease;
+}

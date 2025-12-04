@@ -3,12 +3,12 @@ import { connect } from "@/app/libs/mongodb";
 import UserInstance from "@/app/models/instance";
 import User from "@/app/models/user";
 
-// Calcula el poder total de un ejército (soldados × base + bonus por nivel)
+// Calcula el poder total de un ejército 
 function calcPower(soldiers: number, level: number) {
   return soldiers * (10 + (level || 1) * 2);
 }
 
-// Calcula el nuevo Elo de ganador y perdedor (sistema clásico ELO con K=32)
+// Calcula el nuevo Elo de ganador y perdedor 
 function calculateNewElo(winnerElo: number, loserElo: number, K = 32) {
   const expectedWin = 1 / (1 + Math.pow(10, (loserElo - winnerElo) / 400));
   const newWinnerElo = Math.round(winnerElo + K * (1 - expectedWin));
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     defender.totalBattles ||= 0;
     attacker.victories ||= 0;
 
-    // Determinar cuántos soldados realmente se envían (no más de los que tiene)
+    // Determinar cuántos soldados realmente se envían 
     const attackerSoldiersSent = Math.min(attacker.population.soldiers, troops.soldiers);
     const defenderSoldiers = defender.population.soldiers;
 

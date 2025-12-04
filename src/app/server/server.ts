@@ -12,7 +12,7 @@ const messagesRoutes = require('./routes/messagesRoutes');
 // Configuración de middleware y rutas
 app.use(express.json());
 app.use('/api', messagesRoutes);
-const { connect } = require('@/app/libs/mongodb'); // Asegúrate de proporcionar la ruta correcta a tu archivo de conexión
+const { connect } = require('@/app/libs/mongodb'); 
 
 connect().then((connected: any) => {
   if (connected) {
@@ -30,9 +30,8 @@ app.get('/', (req: any, res: any) => {
 io.on('connection', (socket: any) => {
   console.log('Un usuario se ha conectado');
 
-  // Manejar eventos de chat
   socket.on('chat message', (msg: any) => {
-    io.emit('chat message', msg); // Enviar mensaje a todos los clientes conectados
+    io.emit('chat message', msg); 
   });
 
   socket.on('disconnect', () => {

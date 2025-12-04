@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { getMessages, sendMessage } from '../utils/msgServices';
 import Image from 'next/image';
 
+// Componente que muestra cada mensaje individual
 const MessageItem = ({ sender, senderPicture, content, timestamp }: any) => {
   const date = new Date(timestamp).toLocaleTimeString('es-ES', { 
     hour: '2-digit', 
@@ -15,6 +16,7 @@ const MessageItem = ({ sender, senderPicture, content, timestamp }: any) => {
 
   return (
     <div className="flex items-start gap-3 animate-in slide-in-from-left-2">
+      {/* Avatar del remitente */}
       {senderPicture ? (
         <Image
           src={senderPicture}
@@ -24,15 +26,18 @@ const MessageItem = ({ sender, senderPicture, content, timestamp }: any) => {
           className="rounded-full object-cover border-2 border-yellow-500 shadow-lg"
         />
       ) : (
+        // Avatar por defecto si no hay foto
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
           {sender ? sender[0].toUpperCase() : "?"}
         </div>
       )}
       <div className="flex-1">
+        {/* Nombre y hora */}
         <div className="flex items-center gap-2">
           <span className="font-bold text-yellow-400">{sender || "Anónimo"}</span>
           <span className="text-xs text-gray-500">· {date}</span>
         </div>
+        {/* Contenido del mensaje */}
         <p className="text-white mt-1">{content}</p>
       </div>
     </div>
@@ -50,10 +55,11 @@ const Inbox = () => {
       setMessages(data);
     };
     fetch();
-    const interval = setInterval(fetch, 5000); // Refresca cada 5 seg
+    const interval = setInterval(fetch, 5000); 
     return () => clearInterval(interval);
   }, []);
 
+  // Envía un nuevo mensaje
   const handleSend = async () => {
     if (!newMessage.trim() || !session?.user?.id) return;
 
@@ -63,46 +69,53 @@ const Inbox = () => {
     setMessages(updated);
   };
 
-  // ESTO BLOQUEA EL SCROLL DEL FONDO CUANDO ESTÁS EN EL BUZÓN
-const handleWheel = (e: React.WheelEvent) => {
-  const element = e.currentTarget;
-  const atBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
-  const atTop = element.scrollTop === 0;
+  // Previene que el scroll del buzón afecte al mapa/fondo del juego
+  // Permite hacer scroll dentro del buzón sin mover el mapa
+  const handleWheel = (e: React.WheelEvent) => {
+    const element = e.currentTarget;
+    const atBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
+    const atTop = element.scrollTop === 0;
 
-  if (e.deltaY > 0 && atBottom) {
-    e.preventDefault();
-  } else if (e.deltaY < 0 && atTop) {
-    e.preventDefault();
-  }
-};
+    if (e.deltaY > 0 && atBottom) {
+      e.preventDefault();
+    } else if (e.deltaY < 0 && atTop) {
+      e.preventDefault();
+    }
+  };
 
   return (
     <Card className="max-w-md w-full bg-gray-900 border-yellow-600 border-4 shadow-2xl">
+      {/* Cabecera */}
       <CardHeader className="bg-yellow-600 text-black">
         <CardTitle className="text-2xl font-black text-center">BUZÓN</CardTitle>
       </CardHeader>
-     <CardContent 
-  className="max-h-96 overflow-y-auto p-5 space-y-4 scrollbar-thin select-none"
-  onWheel={(e) => {
-    e.stopPropagation();
-    const el = e.currentTarget;
-    const atTop = el.scrollTop <= 0;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 5;
 
-    if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
-      e.preventDefault();
-    }
-  }}
-  style={{ overscrollBehaviorY: 'contain' }}
->
-  {messages.length === 0 ? (
-    <p className="text-center text-gray-500 italic">No hay mensajes...</p>
-  ) : (
-    messages.map((msg) => (
-      <MessageItem key={msg._id} {...msg} />
-    ))
-  )}
-</CardContent>
+      {/* Área de mensajes con scroll independiente */}
+      <CardContent 
+        className="max-h-96 overflow-y-auto p-5 space-y-4 scrollbar-thin select-none"
+        onWheel={(e) => {
+          e.stopPropagation(); // Detiene la propagación al mapa
+          const el = e.currentTarget;
+          const atTop = el.scrollTop <= 0;
+          const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 5;
+
+          // Bloquea scroll del fondo cuando llegás arriba o abajo del buzón
+          if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
+            e.preventDefault();
+          }
+        }}
+        style={{ overscrollBehaviorY: 'contain' }} // Extra protección contra scroll del fondo
+      >
+        {messages.length === 0 ? (
+          <p className="text-center text-gray-500 italic">No hay mensajes...</p>
+        ) : (
+          messages.map((msg) => (
+            <MessageItem key={msg._id} {...msg} />
+          ))
+        )}
+      </CardContent>
+
+      {/* Pie para escribir y enviar mensajes */}
       <CardFooter className="p-4 bg-gray-800 border-t-4 border-yellow-600">
         <div className="flex gap-2 w-full">
           <Textarea

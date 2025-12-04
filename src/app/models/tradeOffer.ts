@@ -1,4 +1,4 @@
-// src/app/models/tradeOffer.ts
+
 import mongoose from 'mongoose';
 
 const tradeOfferSchema = new mongoose.Schema({
@@ -32,7 +32,7 @@ const tradeOfferSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 86400, // expira en 24h
+    expires: 86400, 
   },
 });
 

@@ -1,4 +1,4 @@
-// src/panel/page.tsx
+
 "use client";
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -122,7 +122,7 @@ export default function ProfilePage() {
       // Actualizar el estado local
       setName(result.user.name);
       setPreviewUrl(result.user.profilePicture);
-      setProfilePicture(null); // Limpiar el input de archivo
+      setProfilePicture(null); 
     } catch (err: any) {
       console.error('Error en handleSubmit:', err);
       setError(err.message || 'Error al actualizar el perfil');

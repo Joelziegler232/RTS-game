@@ -22,7 +22,7 @@ interface BuildingDrawerProps {
   onBuild: (cost: { gold?: number; money?: number; food?: number; lumber?: number; stone?: number }) => void;
   setStructure: Dispatch<SetStateAction<number | null>>;
   playerLevel: number;
-  ayuntamientoArray: Structure[]; // Prop para verificar ayuntamientos
+  ayuntamientoArray: Structure[]; 
 }
 
 const DrawerContainer = styled(Box)(({ theme }) => ({
@@ -100,7 +100,7 @@ const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild,
             {availableStructures.map((building) => (
               <Grid item key={building.id}>
                 <StyledCard onClick={() => handleCardClick(building)}>
-                  {/* CardMedia - usamos spriteImage como background */}
+                  {/* CardMedia */}
                   <StyledMedia image={building.spriteImage} title={building.name} />
                   <CardContent>
                     <Typography gutterBottom variant="h6" component="h2" style={{ color: '#fff' }}>

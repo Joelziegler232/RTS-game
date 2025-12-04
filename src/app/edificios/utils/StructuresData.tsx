@@ -1,10 +1,8 @@
 import Image from 'next/image';
-
-// Cambia esta línea:
 export interface Structure {
   id: number;
   name: string;
-  type: 'lumber' | 'gold_mine' | 'stone_mine' | 'ayuntamiento' | 'shipyard' | 'mill' | 'house' | 'barracks' | 'mercado'; // ← AÑADIDO
+  type: 'lumber' | 'gold_mine' | 'stone_mine' | 'ayuntamiento' | 'shipyard' | 'mill' | 'house' | 'barracks' | 'mercado'; 
   img?: JSX.Element;
   spriteImage?: string;
   cost: {
@@ -31,12 +29,11 @@ export interface Structure {
   description?: string;
 }
 
-// Tipo para edificios que producen (los que tienen obreros)
-// En StructuresData.ts → dejalo exactamente así:
+
 export interface Generadores extends Structure {
   type: 'lumber' | 'gold_mine' | 'stone_mine' | 'mill';
   produccion_hora: number;
-  obreros: number;           // ← ahora obligatorio para generadores
+  obreros: number;           
   maxObreros: number;
   maxCapacity: number;
   capacity: number;
@@ -160,5 +157,4 @@ export const structures: Structure[] = [
 
 ];
 
-// Para el backend: quitamos img y campos que no existen aún
 export const structuresForBackend = structures.map(({ img, ...rest }) => rest);

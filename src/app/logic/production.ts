@@ -1,4 +1,4 @@
-// src/app/logic/production.ts
+
 import { Structure, Generadores } from "../edificios/utils/StructuresData";
 
 export function updateData(generador: Structure): Structure {
@@ -7,7 +7,7 @@ export function updateData(generador: Structure): Structure {
     generador.type === "gold_mine" ||
     generador.type === "stone_mine"
   ) {
-    // Type guard para asegurar que generador es un Generadores
+    
     if (
       generador.produccion_hora !== undefined &&
       generador.obreros !== undefined &&
@@ -17,14 +17,14 @@ export function updateData(generador: Structure): Structure {
       generador.capacity !== undefined &&
       generador.updateTime !== undefined
     ) {
-      // 🔥 FIX CRÍTICO: convertir updateTime a Date SIEMPRE
+      
       const lastUpdate =
         generador.updateTime instanceof Date
           ? generador.updateTime
-          : new Date(generador.updateTime); // <-- permite string o Date
+          : new Date(generador.updateTime); 
 
       const timeDiff =
-        (Date.now() - lastUpdate.getTime()) / 1000 / 3600; // Horas desde última actualización
+        (Date.now() - lastUpdate.getTime()) / 1000 / 3600; 
 
       const newCapacity = Math.min(
         generador.maxCapacity,
@@ -35,7 +35,7 @@ export function updateData(generador: Structure): Structure {
       return {
         ...generador,
         capacity: newCapacity,
-        updateTime: new Date(), // nueva marca de tiempo
+        updateTime: new Date(), 
       } as Generadores;
     }
   }

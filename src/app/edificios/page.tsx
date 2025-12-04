@@ -60,17 +60,13 @@ export default function Home() {
   const [battleOpen, setBattleOpen] = useState(false);
   const [battleLoading, setBattleLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  
 
 const [showResult, setShowResult] = useState(false);
 const [lastReport, setLastReport] = useState<any>(null);
 
-// PARA EL CARTEL DE "¡TE ATACARON!"
 const [showAttackAlert, setShowAttackAlert] = useState(false);
 const [latestAttack, setLatestAttack] = useState<any>(null);
 
-// 🔥 Población total = aldeanos totales + soldados
-// Esta es la línea CORRECTA
 const totalPopulation = playerVillagers + 
   (lumberCampArray.reduce((sum, b) => sum + (b.obreros || 0), 0) +
    goldMineArray.reduce((sum, b) => sum + (b.obreros || 0), 0) +
@@ -94,8 +90,6 @@ const totalPopulation = playerVillagers +
   maxPoblacion: 0,
 });
 
-
-  // Estado temporal para la construcción pendiente (se usa para validar antes y para aplicar el descuento cuando se confirme)
   const [pendingBuildCost, setPendingBuildCost] = useState<{
     gold?: number;
     money?: number;
@@ -118,7 +112,6 @@ const totalPopulation = playerVillagers +
     return () => clearTimeout(timer);
   }, [status, router, session]);
 
-  // === ESCUCHA ENEMIGO ENCONTRADO (FIABLE AL 100%) ===
 useEffect(() => {
   const handleEnemyFound = (e: CustomEvent) => {
     const enemy = e.detail;
@@ -137,7 +130,7 @@ useEffect(() => {
     window.removeEventListener('enemyFound', handleEnemyFound as EventListener);
   };
 }, []);
-// ESCUCHA EL RESULTADO DE BATALLA Y MUESTRA EL MODAL ÉPICO
+
 useEffect(() => {
   const handleBattleResult = (e: any) => {
     const report = e.detail;
@@ -146,7 +139,7 @@ useEffect(() => {
     setLastReport(report);
     setShowResult(true);
 
-    // Recargamos datos frescos del backend
+    
     const reload = async () => {
       if (!session?.user?.id) return;
       try {
@@ -155,7 +148,7 @@ useEffect(() => {
           const data = await res.json();
           setUnits(data.units || []);
           setPlayerFood(data.resources.find((r: any) => r.resource === "food")?.amount || 0);
-          // Actualiza población en HUD
+         
           window.dispatchEvent(new CustomEvent("playerPopulationUpdate", {
             detail: {
               villagers: data.population.villagers,
@@ -263,16 +256,15 @@ useEffect(() => {
   profilePicture: session.user.profilePicture || user.profilePicture || '/default-profile.png',
 
   poblacion: instance.population?.villagers || 0,
-  poblacionLibre: instance.population?.villagers || 0, // o lo que corresponda
+  poblacionLibre: instance.population?.villagers || 0, 
   maxPoblacion: instance.population?.maxPopulation || 0,
 });
-        // MOSTRAR CARTEL SI TE ATACARON RECIENTEMENTE
+        
         if (instance.battleReports && instance.battleReports.length > 0) {
           const lastReport = instance.battleReports[0];
           const attackTime = new Date(lastReport.timestamp);
           const hoursSinceAttack = (Date.now() - attackTime.getTime()) / (1000 * 60 * 60);
 
-          // Si fue atacado en las últimas 24 horas → mostrar cartel
           if (hoursSinceAttack < 24) {
             setLatestAttack(lastReport);
             setShowAttackAlert(true);
@@ -328,10 +320,10 @@ setPlayerVillagers(villagersFromBackend);
   profilePicture: session.user.profilePicture || user.profilePicture || '/default-profile.png',
 
   poblacion: instance.population?.villagers || 0,
-  poblacionLibre: instance.population?.villagers || 0, // o lo que corresponda
+  poblacionLibre: instance.population?.villagers || 0, 
   maxPoblacion: instance.population?.maxPopulation || 0,
 });
-        // CARTEL ÉPICO: ¡TE ATACARON RECIENTEMENTE!
+        
         if (instance.battleReports && instance.battleReports.length > 0) {
           const ultimoAtaque = instance.battleReports[0];
           const tiempo = new Date(ultimoAtaque.timestamp).getTime();
@@ -364,7 +356,7 @@ setPlayerVillagers(villagersFromBackend);
     };
   }, []);
 
-  // Escucha evento disparado desde mapBuildings cuando la construcción se confirmó correctamente
+  
   useEffect(() => {
     const handler = async (e: any) => {
       const cost = e?.detail?.cost || pendingBuildCost;
@@ -373,7 +365,7 @@ setPlayerVillagers(villagersFromBackend);
         return;
       }
 
-      // Aplicar descuento en frontend
+     
       const newGold = Number(playerGold) - (cost.gold || 0);
       const newMoney = Number(playerMoney) - (cost.money || 0);
       const newFood = Number(playerFood) - (cost.food || 0);
@@ -386,7 +378,7 @@ setPlayerVillagers(villagersFromBackend);
       setPlayerLumber(newLumber);
       setPlayerStone(newStone);
 
-      // Persistir recursos al backend
+      
       try {
         await fetch(`/api/user_instance/${session.user.id}`, {
           method: 'PATCH',
@@ -424,8 +416,7 @@ setPlayerVillagers(villagersFromBackend);
   // =============================
   //   RECURSOS POR SEGUNDOS
   // =============================
-  // RECURSOS POR SEGUNDO (OPTIMIZADO)
-// ====== PRODUCCIÓN QUE SÍ SUBE CON ALDEANOS ======
+
 useEffect(() => {
   if (!session?.user?.id) return;
 
@@ -489,10 +480,8 @@ useEffect(() => {
     });
   };
 
-  // Guardar cada 2 minutos
   const saveInterval = setInterval(saveResources, 120000);
 
-  // Guardar al cerrar
   window.addEventListener('beforeunload', saveResources);
 
   return () => {
@@ -501,8 +490,6 @@ useEffect(() => {
   };
 }, [session, playerGold, playerLumber, playerStone, playerFood, playerMoney]);
 
-// EN TU page.tsx (el de Home)
-// ACTUALIZACIÓN PERFECTA DESPUÉS DE BATALLA
 useEffect(() => {
   const handleBattleResult = async (e: any) => {
     const report = e.detail;
@@ -532,8 +519,6 @@ useEffect(() => {
       setPlayerStone(r.find((x: any) => x.resource === "stone")?.amount || 0);
       setPlayerMoney(r.find((x: any) => x.resource === "money")?.amount || 0);
 
-      // ESTO ES CLAVE: forzamos que los edificios se actualicen también
-      // (por si cambian obreros, etc.)
       setLumberCampArray(freshData.buildings?.filter((b: any) => b.type === "lumber") || []);
 setGoldMineArray(freshData.buildings?.filter((b: any) => b.type === "gold_mine") || []);
 setStoneMineArray(freshData.buildings?.filter((b: any) => b.type === "stone_mine") || []);
@@ -544,14 +529,14 @@ setBarracksArray(freshData.buildings?.filter((b: any) => b.type === "barracks") 
 setShipyardArray(freshData.buildings?.filter((b: any) => b.type === "shipyard") || []);
 setMarketArray(freshData.buildings?.filter((b: any) => b.type === "mercado") || []);
 
-      // Disparamos evento global para que todo el resto del juego se entere
+      
       window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: freshData }));
 
     } catch (err) {
       console.error("Error recargando tras batalla:", err);
     }
 
-    // Mostramos el reporte de batalla
+    
     window.dispatchEvent(new CustomEvent("showBattleReport", { detail: report }));
   };
 
@@ -568,10 +553,10 @@ useEffect(() => {
     const data = e.detail;
     if (!data) return;
 
-    // Actualizamos TODO desde el backend (esto es la verdad absoluta)
+    
     setPlayerVillagers(data.population?.villagers || 0);
     setPlayerPopulationCap(data.population?.maxPopulation || 0);
-        setUnits(data.units || []);                    // ← CLAVE 1
+        setUnits(data.units || []);                  
     setPlayerVillagers(data.population?.villagers || 0);
     setPlayerPopulationCap(data.population?.maxPopulation || 0);
 
@@ -601,8 +586,6 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
   const handleOpenDrawer = () => setDrawerOpen(true);
   const handleCloseDrawer = () => setDrawerOpen(false);
 
-  // Ahora: VALIDAMOS recursos aquí pero no los descontamos. El descuento real ocurre cuando
-  // mapBuildings confirma la colocación y dispara 'buildingPlaced'.
  const handleBuild = useCallback((cost: {
   gold?: number;
   money?: number;
@@ -644,7 +627,7 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
   structure,
   ayuntamientoArray.length
 ]);
-  // FUNCIÓN PARA BUSCAR BATALLA (la movemos aquí para que BattleModal la use)
+
   const searchBattle = async () => {
   if (isSearching) return;
   if (soldierCount === 0) {
@@ -718,10 +701,10 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
       return;
     }
 
-    // AQUÍ ESTÁ EL FIX: DISPARAR EL EVENTO PARA QUE SALGA EL MODAL
+   
     window.dispatchEvent(new CustomEvent('battleResult', { detail: data.report }));
 
-    // Cerrar modal de batalla
+   
     setBattleOpen(false);
     setBattleEnemy(null);
 
@@ -807,7 +790,7 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
       )}
 
       {/* =============================
-          BARRA DE PROGRESO (CREACIÓN DE UNIDADES)
+          BARRA DE PROGRESO 
       ============================= */}
       {progressBar && (
         <Progressbar
@@ -878,7 +861,7 @@ shipyardArray={shipyardArray}
   onSearchAgain={() => {
     setBattleOpen(false);
     setBattleEnemy(null);
-    searchBattle(); // ahora sí existe!
+    searchBattle(); 
   }}
 />
 
@@ -896,7 +879,7 @@ shipyardArray={shipyardArray}
             Construir Edificios
           </Button>
 
-      {/* CARTEL ÉPICO: ¡TE ATACARON! */}
+      {/* CARTEL de ataque */}
       {showAttackAlert && latestAttack && (
         <div className="fixed inset-0 bg-black/95 z-60 flex items-center justify-center p-4">
           <motion.div
@@ -948,7 +931,6 @@ shipyardArray={shipyardArray}
         </div>
       )}
 
-{/* MODAL DE RESULTADO DE BATALLA ÉPICO */}
 <BattleResultModal
   open={showResult}
   report={lastReport}

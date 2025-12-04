@@ -1,4 +1,4 @@
-// src/app/models/resetToken.ts
+
 import { Schema, model, models } from "mongoose";
 
 const ResetTokenSchema = new Schema({
@@ -14,7 +14,7 @@ const ResetTokenSchema = new Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 3600, // El token expira en 1 hora
+    expires: 3600, 
   },
 });
 
