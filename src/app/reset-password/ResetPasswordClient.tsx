@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, Suspense } from "react";  // ← Añade Suspense aquí
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ResetPassword() {
+// Mueve TODO el código que usa useSearchParams a un componente interno
+function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams();  // ← Hook aquí
   const token = searchParams.get("token");
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function ResetPassword() {
     router.push("/login");
   };
 
+  // ← TODO el JSX que depende del token va AQUÍ, dentro del componente que usa el hook
   return (
     <main className="container mx-auto flex flex-col justify-center items-center min-h-screen bg-black">
       <h2 className="text-3xl font-bold mb-6 text-blue-500">Restablecer Contraseña</h2>
@@ -97,5 +99,14 @@ export default function ResetPassword() {
         </a>
       </p>
     </main>
+  );
+}
+
+// ← Exporta un wrapper con Suspense INTERNO que envuelve el Form
+export default function ResetPassword() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Procesando token...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

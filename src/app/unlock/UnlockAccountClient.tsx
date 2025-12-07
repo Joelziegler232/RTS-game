@@ -1,14 +1,14 @@
-
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, Suspense } from "react";  // ← Añade Suspense
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function UnlockAccount() {
+// Componente interno con el hook
+function UnlockForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams();  // ← Hook aquí
   const token = searchParams.get("token");
 
   useEffect(() => {
@@ -44,6 +44,7 @@ export default function UnlockAccount() {
     router.push("/login");
   };
 
+  // ← JSX aquí
   return (
     <main className="container mx-auto flex flex-col justify-center items-center min-h-screen bg-black">
       <h2 className="text-3xl font-bold mb-6 text-blue-500">Desbloquear Cuenta</h2>
@@ -66,5 +67,14 @@ export default function UnlockAccount() {
         </a>
       </p>
     </main>
+  );
+}
+
+// ← Wrapper con Suspense
+export default function UnlockAccount() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Procesando token...</div>}>
+      <UnlockForm />
+    </Suspense>
   );
 }
