@@ -1,3 +1,6 @@
+// app/reset-password/page.tsx
+export const dynamic = 'force-dynamic';   
+
 import { Suspense } from 'react';
 import ResetPassword from './ResetPasswordClient';
 
