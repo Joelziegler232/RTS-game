@@ -13,13 +13,11 @@ export default function BattleResultModal({
   onClose: () => void;
 }) {
   const [showConfetti, setShowConfetti] = useState(false);
-  const youWin = report?.attackerWins; 
+  const youWin = report?.attackerWins;
 
-  
   useEffect(() => {
     if (open && youWin) {
       setShowConfetti(true);
-
       const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-triumphant-bugle-2163.mp3");
       audio.volume = 0.8;
       audio.play().catch(() => {});
@@ -36,7 +34,7 @@ export default function BattleResultModal({
 
   return (
     <>
-      {/* CONFETTI  */}
+     
       {showConfetti && youWin && (
         <Confetti
           width={window.innerWidth}
@@ -50,124 +48,66 @@ export default function BattleResultModal({
         />
       )}
 
-      {/* ANIMACIÓN */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/98 z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        {/* MODAL ÉPICO */}
+      {/* FONDO OSCURO */}
+      <div className="fixed inset-0 bg-black/95 z-60 flex items-center justify-center p-4">
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 120, damping: 15 }}
-          className={`relative p-16 rounded-3xl text-center max-w-3xl border-8 shadow-2xl overflow-hidden
-            ${youWin 
-              ? "bg-gradient-to-b from-yellow-700 via-orange-800 to-red-950 border-yellow-400" 
-              : "bg-gradient-to-b from-gray-900 via-black to-gray-800 border-red-900"
-            }`}
+          className={`relative bg-gradient-to-b ${
+            youWin
+              ? "from-yellow-900 via-orange-900 to-red-950 border-yellow-600"
+              : "from-red-900 via-black to-red-950 border-red-600"
+          } border-8 rounded-3xl p-12 max-w-3xl text-center shadow-2xl`}
           onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundImage: youWin ? "url('/victory-bg.jpg')" : "url('/defeat-bg.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
         >
-          {/* TÍTULO LEGENDARIO */}
-          <motion.h1
-            initial={{ y: -120, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-            className={`text-9xl font-black drop-shadow-2xl mb-10 tracking-wider
-              ${youWin ? "text-yellow-300" : "text-red-600"}
-              ${youWin ? "animate-pulse" : ""}
-            `}
-            style={{
-              textShadow: youWin 
-                ? "0 0 30px #FFD700, 0 0 60px #FF4500" 
-                : "0 0 30px #8B0000, 0 0 60px #000000",
-            }}
-          >
-            {youWin ? "¡VICTORIA TOTAL!" : "DERROTA"}
-          </motion.h1>
+          {/* TÍTULO */}
+          <h1 className={`text-8xl font-black mb-10 drop-shadow-2xl ${
+            youWin ? "text-yellow-400" : "text-red-500"
+          }`}>
+            {youWin ? "¡VICTORIA!" : "¡DERROTA!"}
+          </h1>
 
-          {/* ESTADÍSTICAS DE BATALLA */}
-          <div className="space-y-8 text-4xl text-white font-bold mb-12">
-            <motion.p
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{ repeat: Infinity, duration: 2.5 }}
-              className="drop-shadow-lg"
-            >
-              Tus bajas: <span className={youWin ? "text-orange-400" : "text-red-500"}>
+       
+          <div className="space-y-6 text-3xl text-white">
+            {/* ESTADÍSTICAS */}
+            <p>
+              Tus bajas: <strong className={youWin ? "text-orange-400" : "text-red-400"}>
                 {report.attacker?.losses || 0}
-              </span> soldados
-            </motion.p>
-            <motion.p
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{ repeat: Infinity, duration: 2.8 }}
-              className="drop-shadow-lg"
-            >
-              Bajas enemigas: <span className={youWin ? "text-green-400" : "text-yellow-300"}>
+              </strong> soldados
+            </p>
+            <p>
+              Bajas enemigas: <strong className={youWin ? "text-green-400" : "text-yellow-300"}>
                 {report.defender?.losses || 0}
-              </span> soldados
-            </motion.p>
+              </strong> soldados
+            </p>
+
+            {/* SAQUEO */}
+            {hasLoot && (
+              <div className={`bg-${youWin ? "yellow" : "red"}-900/50 rounded-2xl p-6 mt-6`}>
+                <p className="text-4xl mb-4 text-yellow-300 font-bold">
+                  {youWin ? "SAQUEO ÉPICO" : "TE SAQUEARON"}
+                </p>
+                {loot.gold > 0 && <p className="text-3xl">+ {loot.gold} Oro</p>}
+                {loot.food > 0 && <p className="text-3xl">+ {loot.food} Comida</p>}
+                {loot.lumber > 0 && <p className="text-3xl">+ {loot.lumber} Madera</p>}
+                {loot.stone > 0 && <p className="text-3xl">+ {loot.stone} Piedra</p>}
+              </div>
+            )}
+
+           
+            
           </div>
 
-          {/* SAQUEO O PÉRDIDA */}
-          {hasLoot && (
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
-              className={`text-5xl font-black space-y-6 mb-12
-                ${youWin ? "text-yellow-300" : "text-red-400"}
-              `}
-            >
-              <p className="text-7xl mb-8">
-                {youWin ? "SAQUEO ÉPICO" : "TE SAQUEARON"}
-              </p>
-
-              {loot.gold > 0 && <p>{youWin ? "+" : "-"}{loot.gold} Oro</p>}
-              {loot.food > 0 && <p>{youWin ? "+" : "-"}{loot.food} Comida</p>}
-              {loot.lumber > 0 && <p>{youWin ? "+" : "-"}{loot.lumber} Madera</p>}
-              {loot.stone > 0 && <p>{youWin ? "+" : "-"}{loot.stone} Piedra</p>}
-
-              {/* TROFEOS Y ELO */}
-              <p className="text-8xl mt-10 font-extrabold">
-                {youWin ? "+25" : "-20"} TROFEOS
-              </p>
-
-              <p className="text-5xl">
-                ELO: {youWin ? report.attacker?.elo : report.defender?.elo}{" "}
-                <span className={youWin ? "text-green-400" : "text-red-600"}>
-                  ({youWin ? "+" : "-"}{Math.round(Math.abs((youWin ? report.attacker?.elo : report.defender?.elo) - 1200) * 0.08)})
-                </span>
-              </p>
-            </motion.div>
-          )}
-
-          {/* BOTÓN FINAL */}
-          <motion.button
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.95 }}
+          {/* BOTÓN */}
+          <button
             onClick={onClose}
-            className={`px-32 py-12 text-7xl font-black rounded-full shadow-2xl transition-all duration-300
-              ${youWin 
-                ? "bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 text-black" 
-                : "bg-gradient-to-r from-red-800 to-black hover:from-red-700 hover:to-gray-900 text-white"
-              }`}
-            style={{
-              boxShadow: youWin 
-                ? "0 0 40px #FFD700, 0 0 80px #FF4500" 
-                : "0 0 40px #8B0000",
-            }}
+            className={`mt-12 px-24 py-8 bg-${youWin ? "yellow" : "red"}-700 hover:bg-${youWin ? "yellow" : "red"}-600 text-${youWin ? "black" : "white"} text-5xl font-black rounded-full shadow-2xl transition-all transform hover:scale-110`}
           >
-            {youWin ? "CERRAR" : "VENGANZA"}
-          </motion.button>
+            {youWin ? "CERRAR" : "CERRAR"}
+          </button>
         </motion.div>
-      </motion.div>
+      </div>
     </>
   );
 }

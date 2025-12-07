@@ -57,52 +57,44 @@ export default function Progressbar({
     return () => clearInterval(interval);
   }, [running, quantity, timePerUnit]);
 
-  // Se ejecuta cuando termina el tiempo de creación de un aldeano
   const finishOneUnit = async () => {
-    if (isCreatingUnit.current) return;   // Evita duplicados
-    isCreatingUnit.current = true;
+  if (isCreatingUnit.current) return;
+  isCreatingUnit.current = true;
 
-    // Datos del nuevo aldeano
-    const newUnit = {
-      id: uuidv4(),
-      type: 'villager',
-      position: {
-        x: ayuntamiento.position!.x + 1,
-        y: ayuntamiento.position!.y + 1,
-      },
-      status: 'idle',
-    };
+  const newUnit = {
+    id: uuidv4(),
+    type: 'villager',
+    position: {
+      x: ayuntamiento.position!.x + 1,
+      y: ayuntamiento.position!.y + 1,
+    },
+    status: 'idle',
+  };
 
-    try {
-      // Guardamos la unidad en el backend
-      const response = await fetch(`/api/user_instance/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ units: [newUnit] }),
-      });
+  try {
+    // Guardamos la unidad
+    await fetch(`/api/user_instance/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ units: [newUnit] }),
+    });
 
-      if (!response.ok) throw new Error('Error creando aldeano');
+   
 
-      const updatedInstance = await response.json();
+    window.dispatchEvent(new CustomEvent("villagerCreated"));
 
-      // Actualizamos estado con datos reales del backend
-      setPlayerVillagers(updatedInstance.population.villagers || 0);
-      setUnits(updatedInstance.units || []);
-
-
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error creando aldeano');
-      setQuantity(prev => prev - 1);  // Revierte si falla
-    } finally {
-      // Siempre limpiamos la cola y la barra
-      setQuantity(0);
-      if (quantity <= 1) {
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error creando aldeano');
+    setQuantity(prev => prev - 1);  // Revierte si falla
+  } finally {
+    setQuantity(0);
+    if (quantity <= 1) {
         setProgressBar(false);
       }
-      isCreatingUnit.current = false;
-    }
-  };
+    isCreatingUnit.current = false;
+  }
+};
 
   // Calcula el porcentaje de progreso
   const progress = timePerUnit > 0 ? (seconds / timePerUnit) * 100 : 0;

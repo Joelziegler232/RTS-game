@@ -6,8 +6,11 @@ import { Structure, structures, Generadores } from '../utils/StructuresData';
 import styles from './MapBuilding.module.css';
 import { User } from '@/app/objects/user';
 import BarracksDetails from "./barracksDetails";
-import BattleResultModal from "./BattleResultModal";
+
 interface MapBuildingsProps {
+  freeVillagers: number; 
+  playerLevel: number;
+
   // ─────────── Menús ───────────
   ayunMenu: boolean;
   setAyuntamientoMenu: Dispatch<SetStateAction<boolean>>;
@@ -57,6 +60,9 @@ interface UnitData {
 }
 
 export default function MapBuildings({
+  freeVillagers,
+  playerLevel,
+
   // Menús
   setAyuntamientoMenu,
   ayunMenu,
@@ -106,6 +112,41 @@ const [trainingSoldier, setTrainingSoldier] = useState<{
   progress: number;
 } | null>(null);
 
+// ESTADO LOCAL PARA EDIFICIOS (esto es la magia)
+const [localBuildings, setLocalBuildings] = useState({
+  ayuntamiento: ayuntamientoArray,
+  lumber: lumberCampArray,
+  mill: millArray,
+  barracks: barracksArray,
+  house: houseArray,
+  goldMine: goldMineArray,
+  stoneMine: stoneMineArray,
+  market: marketArray,
+});
+// SINCRONIZA LOS EDIFICIOS AL INSTANTE SIN RECARGAR
+useEffect(() => {
+  setLocalBuildings({
+    ayuntamiento: ayuntamientoArray,
+    lumber: lumberCampArray,
+    mill: millArray,
+    barracks: barracksArray,
+    house: houseArray,
+    goldMine: goldMineArray,
+    stoneMine: stoneMineArray,
+    market: marketArray,
+  });
+}, [
+  ayuntamientoArray,
+  lumberCampArray,
+  millArray,
+  barracksArray,
+  houseArray,
+  goldMineArray,
+  stoneMineArray,
+  marketArray,
+]);
+
+
 // ------------------------------
 // Referencias de Three.js
 // ------------------------------
@@ -120,6 +161,31 @@ const mouse = useRef(new THREE.Vector2());
 // Contadores derivados
 // ------------------------------
 const soldierCount = units.filter(u => u.type === "soldier").length;
+
+// SINCRONIZA SIN RECARGAR
+useEffect(() => {
+  const handleInstanceUpdate = (event: any) => {
+    const data = event.detail;
+
+    
+    if (data.units) {
+      setUnits(data.units);
+    }
+
+    
+    if (data.buildings) {
+      setBarracksArray(data.buildings.filter((b: any) => b.type === "barracks"));
+    }
+
+   
+    if (data.level !== undefined) {
+      user.level = data.level;
+    }
+  };
+
+  window.addEventListener("instanceUpdated", handleInstanceUpdate);
+  return () => window.removeEventListener("instanceUpdated", handleInstanceUpdate);
+}, []);
 
 // ------------------------------
 // Funciones
@@ -159,6 +225,7 @@ const [isDraggingCamera, setIsDraggingCamera] = useState(false);
 const previousMousePosition = useRef({ x: 0, y: 0 });
 const highlightMeshRef = useRef<THREE.Mesh | null>(null);
 
+
 // ------------------------------
 // useEffect: cerrar menú de generadores
 // ------------------------------
@@ -185,31 +252,25 @@ useEffect(() => {
 // ------------------------------
 const generadorData = useCallback(
   (id: number) => {
-    // Edificios que sí son generadores
     const built = [
-      ...lumberCampArray,
-      ...goldMineArray,
-      ...stoneMineArray,
-      ...millArray,
+      ...localBuildings.lumber,
+      ...localBuildings.goldMine,
+      ...localBuildings.stoneMine,
+      ...localBuildings.mill,
     ].find((b) => b.id === id);
 
     if (!built) return;
 
-    // Si ya está abierto y es el mismo → OCULTAR
     if (visibleBuildingDetails && buildingInformation?.id === id) {
       setVisibleBuildingDetails(false);
       setBuildingInformation(null);
       return;
     }
 
-    // Buscar SOLO definición del generador
     const base = structures.find(
       (s) =>
         s.type === built.type &&
-        (s.type === "lumber" ||
-          s.type === "gold_mine" ||
-          s.type === "stone_mine" ||
-          s.type === "mill")
+        (s.type === "lumber" || s.type === "gold_mine" || s.type === "stone_mine" || s.type === "mill")
     );
 
     if (!base) return;
@@ -220,28 +281,14 @@ const generadorData = useCallback(
       updateTime: built.updateTime ? new Date(built.updateTime) : new Date(),
     };
 
-    // Mostrar detalles del generador
     setBuildingInformation(fullInfo);
     setVisibleBuildingDetails(true);
   },
-  [
-    lumberCampArray,
-    goldMineArray,
-    stoneMineArray,
-    millArray,
-    houseArray,
-    ayuntamientoArray,
-    barracksArray,
-    shipyardArray,
-    visibleBuildingDetails,
-    buildingInformation,
-  ]
+  [localBuildings, visibleBuildingDetails, buildingInformation]
 );
-
-
 const barracksMenu = useCallback(
   (id: number) => {
-    const cuartel = barracksArray.find((b) => b.id === id);
+    const cuartel = localBuildings.barracks.find((b) => b.id === id);
     if (!cuartel) return;
 
     if (visibleBarracksDetails && barracksInformation?.id === id) {
@@ -254,22 +301,30 @@ const barracksMenu = useCallback(
     setVisibleBarracksDetails(true);
     window.dispatchEvent(new CustomEvent("openBuildingMenu"));
   },
-  [barracksArray, visibleBarracksDetails, barracksInformation]
+  [localBuildings.barracks, visibleBarracksDetails, barracksInformation]
 );
 
 
-
   const ayuntamientoMenu = useCallback(
-    (index: number) => {
-      const ayuntamiento = ayuntamientoArray.find((ayuntamiento) => ayuntamiento.id === index);
-      if (ayuntamiento) {
-        setAyuntamientoInformation(ayuntamiento);
-        setVisibleAyuntamientoDetails(!visibleAyuntamientoDetails);
-        setAyuntamientoMenu(!ayunMenu);
-      }
-    },
-    [ayuntamientoArray, ayunMenu, setAyuntamientoMenu, visibleAyuntamientoDetails]
-  );
+  (id: number) => {
+    const ayuntamiento = localBuildings.ayuntamiento.find((b) => b.id === id);
+    if (!ayuntamiento) return;
+
+    // Si ya está abierto el menú del mismo ayuntamiento → cerrarlo
+    if (ayunMenu && ayuntamientoInfo?.id === id) {
+      setAyuntamientoMenu(false);
+      setVisibleAyuntamientoDetails(false);
+      setAyuntamientoInformation(null);
+      return;
+    }
+
+    // Abrir menú
+    setAyuntamientoInformation(ayuntamiento);
+    setVisibleAyuntamientoDetails(true);
+    setAyuntamientoMenu(true);
+  },
+  [localBuildings.ayuntamiento, ayunMenu, ayuntamientoInfo?.id]
+);
 
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -800,6 +855,7 @@ const newStructure: Structure = {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ building: newStructure }),
+                  
                 });
 
                                 if (!response.ok) {
@@ -815,9 +871,24 @@ const newStructure: Structure = {
                   }
                   return;
                 }
-               
-                const data = await response.json();
-                
+                               const data = await response.json();
+
+                // ACTUALIZAR RECURSOS (esto ya lo tenías)
+                await fetch(`/api/user_instance/${user.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    resources: [
+                      { resource: 'gold', amount: Math.floor((window as any).playerGold || 0) },
+                      { resource: 'lumber', amount: Math.floor((window as any).playerLumber || 0) },
+                      { resource: 'stone', amount: Math.floor((window as any).playerStone || 0) },
+                      { resource: 'food', amount: Math.floor((window as any).playerFood || 0) },
+                      { resource: 'money', amount: Math.floor((window as any).playerMoney || 0) },
+                    ],
+                  }),
+                });
+
+                // ACTUALIZAR EDIFICIOS CON LOS DATOS DEL BACKEND
                 setLumberCampArray(data.buildings.filter((b: any) => b.type === "lumber"));
                 setGoldMineArray(data.buildings.filter((b: any) => b.type === "gold_mine"));
                 setStoneMineArray(data.buildings.filter((b: any) => b.type === "stone_mine"));
@@ -825,18 +896,28 @@ const newStructure: Structure = {
                 setHouseArray(data.buildings.filter((b: any) => b.type === "house"));
                 setAyuntamientoArray(data.buildings.filter((b: any) => b.type === "ayuntamiento"));
                 setBarracksArray(data.buildings.filter((b: any) => b.type === "barracks"));
-                
                 setMarketArray(data.buildings.filter((b: any) => b.type === "mercado") || []);
 
+                // DISPARAR EVENTO
                 window.dispatchEvent(new CustomEvent("buildingPlaced"));
 
-                const material = draggingBuilding.material.clone();
-                material.opacity = 1;
-                const permanentSprite = new THREE.Sprite(material);
-                permanentSprite.position.copy(draggingBuilding.position);
-                permanentSprite.scale.set(2, 2, 1);
-                permanentSprite.userData = { id: newStructure.id, type: selectedStructure.type };
-                sceneRef.current.add(permanentSprite);
+                // ENCONTRAR EL EDIFICIO QUE ACABÁS DE CONSTRUIR (con el ID del backend)
+                const nuevoEdificio = data.buildings.find((b: any) => 
+                  b.position?.x === tileX && b.position?.y === tileY
+                );
+
+                if (nuevoEdificio) {
+                  const material = draggingBuilding.material.clone();
+                  material.opacity = 1;
+                  const permanentSprite = new THREE.Sprite(material);
+                  permanentSprite.position.copy(draggingBuilding.position);
+                  permanentSprite.scale.set(2, 2, 1);
+                  permanentSprite.userData = { 
+                    id: nuevoEdificio.id,      // ID CORRECTO DEL BACKEND
+                    type: nuevoEdificio.type   // TIPO CORRECTO
+                  };
+                  sceneRef.current.add(permanentSprite);
+                }
 
                 sceneRef.current.remove(draggingBuilding);
                 setDraggingBuilding(null);
@@ -934,38 +1015,34 @@ const newStructure: Structure = {
       setStructure,
     ]
   );
+const handleClick = useCallback(
+  (event: MouseEvent) => {
+    if (draggingBuilding || !cameraRef.current || !sceneRef.current) return;
 
-  const handleClick = useCallback(
-    (event: MouseEvent) => {
-      if (draggingBuilding || !cameraRef.current || !sceneRef.current) {
-        console.log('Clic ignorado:', { draggingBuilding, camera: !!cameraRef.current, scene: !!sceneRef.current });
-        return;
-      }
-      mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      raycaster.current.setFromCamera(mouse.current, cameraRef.current);
-      const intersects = raycaster.current.intersectObjects(sceneRef.current.children);
-      if (intersects.length > 0) {
-        const intersected = intersects[0].object;
-        if (intersected instanceof THREE.Sprite && intersected.userData.id !== undefined) {
-          const { id, type } = intersected.userData;
-          
-                    if (type === 'ayuntamiento') {
-            ayuntamientoMenu(id);
-          } else if (type === 'lumber' || type === 'gold_mine' || type === 'stone_mine' || type === 'mill') {
-            generadorData(id);
-          } else if (type === 'barracks') {
-            barracksMenu(id);
-          } else if (type === 'mercado') {
-            window.location.href = '/mercado';
-          }
+    mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.current.setFromCamera(mouse.current, cameraRef.current);
+    const intersects = raycaster.current.intersectObjects(sceneRef.current.children);
 
+    if (intersects.length > 0) {
+      const intersected = intersects[0].object;
+      if (intersected instanceof THREE.Sprite && intersected.userData.id !== undefined) {
+        const { id, type } = intersected.userData;
+
+        if (type === 'ayuntamiento') {
+          ayuntamientoMenu(id);
+        } else if (type === 'lumber' || type === 'gold_mine' || type === 'stone_mine' || type === 'mill') {
+          generadorData(id);
+        } else if (type === 'barracks') {
+          barracksMenu(id);
+        } else if (type === 'mercado') {
+          window.location.href = '/mercado';
         }
       }
-    },
-    [draggingBuilding, ayuntamientoMenu, generadorData, barracksMenu]
-
-  );
+    }
+  },
+  [draggingBuilding, ayuntamientoMenu, generadorData, barracksMenu]
+);
 
   const handleWheel = useCallback((event: WheelEvent) => {
     if (cameraRef.current) {
@@ -1028,25 +1105,25 @@ const newStructure: Structure = {
     }
   }, [structure, draggingBuilding]);
 
-  const assignVillager = async (buildingId: number) => {
+const assignVillager = async (buildingId: number) => {
   try {
     const response = await fetch(`/api/user_instance/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        assignVillager: { id: buildingId } 
-      }),
+      body: JSON.stringify({ assignVillager: { id: buildingId } }),
     });
 
     if (!response.ok) throw new Error("Error asignando aldeano");
 
     const updatedInstance = await response.json();
 
+    // SOLO actualizamos los edificios
     setLumberCampArray(updatedInstance.buildings.filter((b: any) => b.type === "lumber"));
     setGoldMineArray(updatedInstance.buildings.filter((b: any) => b.type === "gold_mine"));
     setStoneMineArray(updatedInstance.buildings.filter((b: any) => b.type === "stone_mine"));
     setMillArray(updatedInstance.buildings.filter((b: any) => b.type === "mill"));
 
+    // DISPARAR EVENTO → page.tsx actualiza TODO (recursos, aldeanos, nivel)
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updatedInstance }));
 
   } catch (err) {
@@ -1060,9 +1137,7 @@ const removeVillager = async (buildingId: number) => {
     const response = await fetch(`/api/user_instance/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        removeVillagerFromBuilding: { id: buildingId } 
-      }),
+      body: JSON.stringify({ removeVillagerFromBuilding: { id: buildingId } }),
     });
 
     if (!response.ok) throw new Error("Error quitando aldeano");
@@ -1089,10 +1164,10 @@ const trainSoldier = async (buildingId: number) => {
     alert("No tienes suficiente comida (30) para entrenar un soldado.");
     return;
   }
-  if (user.poblacionLibre <= 0) {
-    alert("No hay aldeanos disponibles.");
-    return;
-  }
+  if (freeVillagers <= 0) {
+  alert("No hay aldeanos disponibles.");
+  return;
+}
   if (trainingSoldier?.id === buildingId) {
     alert("Ya hay un soldado en entrenamiento en este cuartel.");
     return;
@@ -1246,26 +1321,33 @@ const generadorActualizado: Generadores | null =
       {/* DETALLES DE GENERADORES */}
       {visibleBuildingDetails && generadorActualizado && (
         <BuildingDetails
-          generador={generadorActualizado}
-          state={visibleBuildingDetails}
-          buildingId={generadorActualizado.id}
-          onAssignVillager={assignVillager}
-          onRemoveVillager={removeVillager}
-        />
+  buildingId={buildingInformation?.id || 0}
+  state={visibleBuildingDetails}
+  onAssignVillager={assignVillager}
+  onRemoveVillager={removeVillager}
+  allGenerators={[
+  ...(localBuildings.lumber as Generadores[]),
+  ...(localBuildings.goldMine as Generadores[]),
+  ...(localBuildings.stoneMine as Generadores[]),
+  ...(localBuildings.mill as Generadores[]),
+]}
+/>
       )}
 
-      {/* DETALLES DEL CUARTEL */}
-      {visibleBarracksDetails && barracksInformation && (
-        <BarracksDetails
-          cuartel={barracksInformation}
-          state={visibleBarracksDetails}
-          buildingId={barracksInformation.id}
-          onTrainSoldier={trainSoldier}
-          playerLevel={user.level}
-          trainingData={trainingSoldier}
-          onSearchBattle={searchBattle}  
-        />
-      )}
+     {/* DETALLES DEL CUARTEL */}
+{visibleBarracksDetails && barracksInformation && (
+  <BarracksDetails
+    key={barracksInformation.id + "-lvl-" + playerLevel}
+    cuartel={barracksInformation}
+    state={visibleBarracksDetails}
+    buildingId={barracksInformation.id}
+    onTrainSoldier={trainSoldier}
+    playerLevel={playerLevel}   // ← 🔥 AHORA SÍ REACTIVO
+    trainingData={trainingSoldier}
+    onSearchBattle={searchBattle}  
+  />
+)}
+
 
       
       

@@ -116,21 +116,28 @@ export default function BattleModal({
           </button>
 
           {/* BUSCAR OTRO */}
-          <button
-            onClick={onSearchAgain}
-            style={{
-              padding: "14px 24px",
-              background: "#43a047",
-              color: "white",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "17px",
-              fontWeight: "bold",
-              boxShadow: "0 4px 12px rgba(67, 160, 71, 0.5)",
-            }}
-          >
-            Buscar otro
-          </button>
+<button
+  onClick={() => {
+    onClose();
+    setTimeout(() => onSearchAgain(), 300);
+  }}
+  style={{
+    padding: "14px 24px",
+    background: "#43a047",
+    color: "white",
+    border: "none",
+    borderRadius: "10px",
+    fontSize: "17px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(67, 160, 71, 0.5)",
+    transition: "all 0.3s",
+  }}
+  onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
+  onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+>
+  Buscar otro
+</button>
 
           {/* CANCELAR */}
           <button

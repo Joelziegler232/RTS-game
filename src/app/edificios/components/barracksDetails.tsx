@@ -38,7 +38,7 @@ export default function BarracksDetails({
         boxShadow: "0 0 20px rgba(0,0,0,0.8)",
       }}
     >
-      {/* Título del cuartel */}
+      
       <h2
         style={{
           fontSize: "20px",
@@ -50,7 +50,7 @@ export default function BarracksDetails({
         Cuartel
       </h2>
 
-      {/* BOTÓN: Entrenar soldado */}
+      
       <button
         style={{
           marginTop: "10px",
@@ -72,7 +72,7 @@ export default function BarracksDetails({
         Entrenar Soldado (30 comida)
       </button>
 
-      {/* BARRA DE PROGRESO del entrenamiento */}
+      {/* BARRA DE PROGRESO  */}
       {trainingData?.id === buildingId && (
         <div style={{ marginTop: "14px" }}>
           <div
@@ -100,7 +100,7 @@ export default function BarracksDetails({
         </div>
       )}
 
-      {/* BOTÓN: Buscar batalla (solo si nivel >= 3) */}
+      {/* BOTÓN: Buscar batalla */}
       {playerLevel >= 3 && (
         <button
           style={{

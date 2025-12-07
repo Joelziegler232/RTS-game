@@ -4,6 +4,14 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 
+const nombresRecursos: Record<string, string> = {
+  money: "Dinero",
+  gold: "Oro",
+  lumber: "Madera",
+  stone: "Piedra",
+  food: "Comida",
+};
+
 interface Resource {
   resource: string;
   amount: number;
@@ -160,7 +168,7 @@ export default function MercadoPage() {
                   aria-label="Recurso de origen"
                 >
                   {resourceOptions.map(r => (
-                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                    <option key={r} value={r}>{nombresRecursos[r] || r.charAt(0).toUpperCase() + r.slice(1)}</option>
                   ))}
                 </select>
               </div>
@@ -175,7 +183,7 @@ export default function MercadoPage() {
                   aria-label="Recurso de destino"
                 >
                   {resourceOptions.filter(r => r !== from).map(r => (
-                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                    <option key={r} value={r}>{nombresRecursos[r] || r.charAt(0).toUpperCase() + r.slice(1)}</option>
                   ))}
                 </select>
               </div>
@@ -229,7 +237,7 @@ export default function MercadoPage() {
                   <h3 className="text-3xl text-yellow-400 mb-6">Ofrezco</h3>
                   {(['lumber', 'stone', 'food', 'gold', 'money'] as const).map(r => (
                     <div key={r} className="flex items-center gap-4 mb-4">
-                      <label htmlFor={`offer-${r}`} className="w-32 text-xl capitalize">{r}:</label>
+                      <label htmlFor={`offer-${r}`} className="w-32 text-xl">{nombresRecursos[r]}:</label>
                       <input
                         id={`offer-${r}`}
                         type="number"
@@ -245,7 +253,7 @@ export default function MercadoPage() {
                   <h3 className="text-3xl text-cyan-400 mb-6">Pido</h3>
                   {(['lumber', 'stone', 'food', 'gold', 'money'] as const).map(r => (
                     <div key={r} className="flex items-center gap-4 mb-4">
-                      <label htmlFor={`request-${r}`} className="w-32 text-xl capitalize">{r}:</label>
+                      <label htmlFor={`request-${r}`} className="w-32 text-xl">{nombresRecursos[r]}:</label>
                       <input
                         id={`request-${r}`}
                         type="number"

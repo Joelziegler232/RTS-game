@@ -102,11 +102,11 @@ export async function POST(request: NextRequest) {
 
     // Recursos iniciales del jugador
     const initialResources = [
-      { resource: "gold", amount: 0 },
+      { resource: "gold", amount: 500 },
       { resource: "money", amount: 5000 },
       { resource: "food", amount: 200 },
-      { resource: "lumber", amount: 0 },
-      { resource: "stone", amount: 0 },
+      { resource: "lumber", amount: 200 },
+      { resource: "stone", amount: 50 },
     ];
 
     // Crear instancia inicial del juego (sin ayuntamiento aún)

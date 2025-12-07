@@ -66,6 +66,7 @@ const [lastReport, setLastReport] = useState<any>(null);
 
 const [showAttackAlert, setShowAttackAlert] = useState(false);
 const [latestAttack, setLatestAttack] = useState<any>(null);
+const [seenAttacks, setSeenAttacks] = useState<Set<string>>(new Set());
 
 const totalPopulation = playerVillagers + 
   (lumberCampArray.reduce((sum, b) => sum + (b.obreros || 0), 0) +
@@ -97,6 +98,8 @@ const totalPopulation = playerVillagers +
     lumber?: number;
     stone?: number;
   } | null>(null);
+
+  const [freeVillagers, setFreeVillagers] = useState(0);
 
   useEffect(() => {
     console.log('Estado de la sesión:', { session, status });
@@ -167,7 +170,25 @@ useEffect(() => {
 
   window.addEventListener("battleResult", handleBattleResult);
   return () => window.removeEventListener("battleResult", handleBattleResult);
-}, [session?.user?.id]);
+}, [session?.user?.id, seenAttacks]);
+
+
+// ESCUCHAR CUANDO SE ENCUENTRA UN ENEMIGO
+useEffect(() => {
+  const handleEnemyFound = (e: any) => {
+    const enemy = e.detail;
+    if (enemy) {
+      setBattleEnemy(enemy);
+      setBattleOpen(true);
+      setIsSearching(false); // Importante: parar el loading
+    }
+  };
+
+  window.addEventListener("enemyFound", handleEnemyFound);
+  return () => window.removeEventListener("enemyFound", handleEnemyFound);
+}, []);
+
+
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -305,9 +326,12 @@ useEffect(() => {
 
       const villagersFromBackend = instance.population?.villagers || 0;
 setPlayerVillagers(villagersFromBackend);
-
+setFreeVillagers(villagersFromBackend); 
         setPlayerPopulationCap(Number(instance.population?.maxPopulation) || 0);
-        setPlayerLevel(Number(instance.level) || 1);
+        setPlayerLevel(Number(instance.level) || 1); 
+        window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
+  detail: Number(instance.level) 
+}));
 
         setUserData({
   id: session.user.id,
@@ -329,10 +353,10 @@ setPlayerVillagers(villagersFromBackend);
           const tiempo = new Date(ultimoAtaque.timestamp).getTime();
           const haceMenosDe24h = Date.now() - tiempo < 24 * 60 * 60 * 1000;
 
-          if (haceMenosDe24h) {
-            setLatestAttack(ultimoAtaque);
-            setShowAttackAlert(true);
-          }
+          if (haceMenosDe24h && !seenAttacks.has(ultimoAtaque._id || ultimoAtaque.timestamp)) {
+  setLatestAttack(ultimoAtaque);
+  setShowAttackAlert(true);
+}
         }
 
       } catch (error) {
@@ -343,6 +367,75 @@ setPlayerVillagers(villagersFromBackend);
 
     fetchUserData();
   }, [session]);
+
+ // ACTUALIZACIÓN AUTOMÁTICA SIN ROMPER RECURSOS (ESTE ES EL BUENO)
+useEffect(() => {
+  const refreshOnAction = () => {
+    if (!session?.user?.id) return;
+
+    fetch(`/api/user_instance/${session.user.id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(instance => {
+        if (!instance) return;
+
+        // Solo actualizamos lo que cambió (nivel, aldeanos, edificios)
+        setPlayerLevel(prev => instance.level || prev || 1);
+        window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
+  detail: instance.level 
+}));
+
+        setPlayerVillagers(prev => instance.population?.villagers ?? prev ?? 0);
+        setFreeVillagers(instance.population?.villagers ?? 0);
+        setPlayerPopulationCap(prev => instance.population?.maxPopulation ?? prev ?? 0);
+
+        // Edificios
+        setAyuntamientoArray(instance.buildings?.filter((b: any) => b.type === "ayuntamiento") || []);
+        setBarracksArray(instance.buildings?.filter((b: any) => b.type === "barracks") || []);
+        setLumberCampArray(instance.buildings?.filter((b: any) => b.type === "lumber") || []);
+        setGoldMineArray(instance.buildings?.filter((b: any) => b.type === "gold_mine") || []);
+        setStoneMineArray(instance.buildings?.filter((b: any) => b.type === "stone_mine") || []);
+        setMillArray(instance.buildings?.filter((b: any) => b.type === "mill") || []);
+        setHouseArray(instance.buildings?.filter((b: any) => b.type === "house") || []);
+        setMarketArray(instance.buildings?.filter((b: any) => b.type === "mercado") || []);
+
+        // Cartel de ataque
+       if (instance.battleReports && instance.battleReports.length > 0) {
+  const ultimoAtaque = instance.battleReports[0];
+  const haceMenosDe24h = Date.now() - new Date(ultimoAtaque.timestamp).getTime() < 24 * 60 * 60 * 1000;
+
+  if (haceMenosDe24h && !seenAttacks.has(ultimoAtaque._id || ultimoAtaque.timestamp)) {
+    setLatestAttack(ultimoAtaque);
+    setShowAttackAlert(true);
+  }
+}
+      })
+      .catch(err => console.error("Error en refreshOnAction:", err));
+  };
+
+  window.addEventListener("buildingPlaced", refreshOnAction);
+  window.addEventListener("villagerCreated", refreshOnAction);
+  window.addEventListener("instanceUpdated", refreshOnAction);
+
+  return () => {
+    window.removeEventListener("buildingPlaced", refreshOnAction);
+    window.removeEventListener("villagerCreated", refreshOnAction);
+    window.removeEventListener("instanceUpdated", refreshOnAction);
+  };
+}, [session?.user?.id, seenAttacks]);
+// === DISPARAR EVENTO CUANDO CAMBIAN LOS EDIFICIOS (para que MapBuildings se entere) ===
+useEffect(() => {
+  window.dispatchEvent(new CustomEvent("mapBuildingsRefresh"));
+}, [
+  ayuntamientoArray,
+  lumberCampArray,
+  millArray,
+  barracksArray,
+  houseArray,
+  goldMineArray,
+  stoneMineArray,
+  marketArray,
+]);
+
 
   useEffect(() => {
     const handleLevelUpdate = (e: any) => {
@@ -509,7 +602,14 @@ useEffect(() => {
      
 
       setPlayerVillagers(freshData.population?.villagers || 0);
+      setFreeVillagers(freshData.population?.villagers || 0);
       setPlayerPopulationCap(freshData.population?.maxPopulation || 0);
+      if (freshData.level !== undefined) {
+  setPlayerLevel(freshData.level);
+  window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
+    detail: freshData.level 
+  }));
+}
 
       // Recursos
       const r = freshData.resources || [];
@@ -542,8 +642,14 @@ setMarketArray(freshData.buildings?.filter((b: any) => b.type === "mercado") || 
 
   window.addEventListener("battleResult", handleBattleResult);
   return () => window.removeEventListener("battleResult", handleBattleResult);
-}, [session?.user?.id]);
-
+}, [session?.user?.id, seenAttacks]);
+// CARGAR ATAQUES YA VISTOS DEL LOCALSTORAGE
+useEffect(() => {
+  const saved = localStorage.getItem("seenAttacks");
+  if (saved) {
+    setSeenAttacks(new Set(JSON.parse(saved)));
+  }
+}, []);
 
 // =============================
 //  SINCRONIZACIÓN TOTAL CON BACKEND
@@ -555,9 +661,11 @@ useEffect(() => {
 
     
     setPlayerVillagers(data.population?.villagers || 0);
+    setFreeVillagers(data.population?.villagers || 0); 
     setPlayerPopulationCap(data.population?.maxPopulation || 0);
         setUnits(data.units || []);                  
     setPlayerVillagers(data.population?.villagers || 0);
+    setFreeVillagers(data.population?.villagers || 0); 
     setPlayerPopulationCap(data.population?.maxPopulation || 0);
 
     setLumberCampArray(data.buildings?.filter((b: any) => b.type === "lumber") || []);
@@ -628,7 +736,7 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
   ayuntamientoArray.length
 ]);
 
-  const searchBattle = async () => {
+const searchBattle = async () => {
   if (isSearching) return;
   if (soldierCount === 0) {
     alert("Necesitas al menos 1 soldado para buscar batalla");
@@ -640,9 +748,18 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
   setBattleOpen(false);
 
   try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    // ← ENVÍAMOS EL ID DEL ÚLTIMO ENEMIGO PARA EXCLUIRLO
+    if (battleEnemy?.userId) {
+      headers["x-last-enemy-id"] = battleEnemy.userId;
+    }
+
     const res = await fetch('/api/battle/find', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ userId: session?.user?.id })
     });
 
@@ -658,7 +775,8 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
       return;
     }
 
-    window.dispatchEvent(new CustomEvent('enemyFound', { detail: data.enemy }));
+    setBattleEnemy(data.enemy);
+    setBattleOpen(true);
 
   } catch (err) {
     console.error(err);
@@ -768,7 +886,7 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
       {/* =============================
           MENÚ DE CREACIÓN (AYUNTAMIENTO)
       ============================= */}
-      {ayuntamientoArray.length > 0 && ayuntamientoMenu && (
+      {ayuntamientoMenu && (
         <CreacionMenu
           user={userData}
           setProgressBar={setProgressBar}
@@ -823,7 +941,7 @@ houseArray={houseArray}
 ayuntamientoArray={ayuntamientoArray}
 barracksArray={barracksArray}
 shipyardArray={shipyardArray}
-
+freeVillagers={freeVillagers}
   structure={structure}
   setStructure={setStructure}
 
@@ -846,6 +964,8 @@ shipyardArray={shipyardArray}
   
  marketArray={marketArray}
   setMarketArray={setMarketArray}
+  playerLevel={playerLevel}
+
 />
 
 
@@ -922,11 +1042,20 @@ shipyardArray={shipyardArray}
             </div>
 
             <button
-              onClick={() => setShowAttackAlert(false)}
-              className="mt-12 px-24 py-8 bg-red-700 hover:bg-red-600 text-white text-5xl font-black rounded-full shadow-2xl transition-all transform hover:scale-110"
-            >
-              CERRAR
-            </button>
+  onClick={() => {
+    setShowAttackAlert(false);
+    if (latestAttack) {
+      const attackId = latestAttack._id || latestAttack.timestamp;
+      const updatedSeen = new Set(seenAttacks);
+      updatedSeen.add(attackId);
+      setSeenAttacks(updatedSeen);
+      localStorage.setItem("seenAttacks", JSON.stringify(Array.from(updatedSeen)));
+    }
+  }}
+  className="mt-12 px-24 py-8 bg-red-700 hover:bg-red-600 text-white text-5xl font-black rounded-full shadow-2xl transition-all transform hover:scale-110"
+>
+  CERRAR
+</button>
           </motion.div>
         </div>
       )}

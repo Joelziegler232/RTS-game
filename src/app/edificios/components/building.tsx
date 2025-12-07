@@ -3,19 +3,24 @@
 import { Generadores } from "../utils/StructuresData";
 
 export default function BuildingDetails({
-  generador,
-  state,
   buildingId,
+  state,
   onAssignVillager,
   onRemoveVillager,
+
+  allGenerators,
 }: {
-  generador: Generadores;
-  state: boolean;
   buildingId: number;
+  state: boolean;
   onAssignVillager: (bId: number) => void;
   onRemoveVillager: (bId: number) => void;
+  allGenerators: Generadores[];
 }) {
-  if (!state || buildingId !== generador.id) return null;
+  if (!state) return null;
+
+  // Siempre busca el edificio más actualizado del array
+  const generador = allGenerators.find(g => g.id === buildingId);
+  if (!generador) return null; 
 
   const isFull = generador.obreros >= generador.maxObreros;
 
@@ -38,7 +43,6 @@ export default function BuildingDetails({
         fontFamily: "'MedievalSharp', 'Roboto', sans-serif",
       }}
     >
-      {/* NOMBRE DEL EDIFICIO */}
       <h2
         style={{
           fontSize: "22px",
@@ -52,7 +56,6 @@ export default function BuildingDetails({
         {generador.name}
       </h2>
 
-      {/* INFORMACIÓN DE PRODUCCIÓN */}
       <div style={{ marginBottom: "18px", fontSize: "17px" }}>
         <p style={{ margin: "8px 0", fontWeight: "bold" }}>
           Producción: <span style={{ color: "#4CAF50" }}>{generador.produccion_hora}/hora</span>
@@ -65,7 +68,6 @@ export default function BuildingDetails({
         </p>
       </div>
 
-      {/* BARRA DE PROGRESO DE OBREROS */}
       <div
         style={{
           width: "100%",
@@ -88,7 +90,6 @@ export default function BuildingDetails({
         />
       </div>
 
-      {/* BOTÓN: ASIGNAR ALDEANO */}
       <button
         disabled={isFull}
         style={{
@@ -112,7 +113,6 @@ export default function BuildingDetails({
         {isFull ? "Capacidad completa" : "Asignar Aldeano"}
       </button>
 
-      {/* BOTÓN: QUITAR ALDEANO (solo si hay al menos uno) */}
       {generador.obreros > 0 && (
         <button
           style={{
@@ -134,7 +134,6 @@ export default function BuildingDetails({
         </button>
       )}
 
-      {/* BOTÓN: CERRAR */}
       <button
         style={{
           marginTop: "16px",
