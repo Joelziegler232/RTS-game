@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent, Suspense } from "react";  // ← Añade Suspense aquí
 import { useRouter, useSearchParams } from "next/navigation";
 
-// Mueve TODO el código que usa useSearchParams a un componente interno
+// Componente interno con el hook (igual que UnlockForm)
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -51,7 +51,7 @@ function ResetPasswordForm() {
     router.push("/login");
   };
 
-  // ← TODO el JSX que depende del token va AQUÍ, dentro del componente que usa el hook
+  // ← TODO el JSX que depende del token va AQUÍ
   return (
     <main className="container mx-auto flex flex-col justify-center items-center min-h-screen bg-black">
       <h2 className="text-3xl font-bold mb-6 text-blue-500">Restablecer Contraseña</h2>
@@ -102,7 +102,7 @@ function ResetPasswordForm() {
   );
 }
 
-// ← Exporta un wrapper con Suspense INTERNO que envuelve el Form
+// ← Wrapper con Suspense INTERNO (igual que en UnlockAccount)
 export default function ResetPassword() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Procesando token...</div>}>
