@@ -3,12 +3,10 @@ import { connect } from "@/app/libs/mongodb";
 import UserInstance from "@/app/models/instance";
 import User from "@/app/models/user";
 
-// Calcula el poder total de un ejército 
 function calcPower(soldiers: number, level: number) {
   return soldiers * (10 + (level || 1) * 2);
 }
 
-// Calcula el nuevo Elo de ganador y perdedor 
 function calculateNewElo(winnerElo: number, loserElo: number, K = 32) {
   const expectedWin = 1 / (1 + Math.pow(10, (loserElo - winnerElo) / 400));
   const newWinnerElo = Math.round(winnerElo + K * (1 - expectedWin));
@@ -16,11 +14,9 @@ function calculateNewElo(winnerElo: number, loserElo: number, K = 32) {
   return { winner: newWinnerElo, loser: newLoserElo };
 }
 
-// Sincroniza la lista de unidades con la cantidad real de soldados
 function syncUnitsWithSoldiers(instance: any) {
   if (!instance.units) instance.units = [];
 
-  // Mantiene solo unidades válidas que no sean soldados
   const validNonSoldiers = (instance.units || [])
     .filter((u: any) => u.type !== "soldier")
     .filter((u: any) => u.id && u.position && typeof u.position.x === "number" && typeof u.position.y === "number");
@@ -28,7 +24,6 @@ function syncUnitsWithSoldiers(instance: any) {
   const remaining = instance.population?.soldiers || 0;
   const newSoldiers = [];
 
-  // Crea soldados nuevos con posición aleatoria cerca del centro
   for (let i = 0; i < remaining; i++) {
     newSoldiers.push({
       id: `soldier_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
@@ -41,18 +36,15 @@ function syncUnitsWithSoldiers(instance: any) {
   instance.units = [...validNonSoldiers, ...newSoldiers];
 }
 
-// Ruta: POST /api/battle/start
 export async function POST(request: NextRequest) {
   try {
     await connect();
     const { attackerId, defenderId, troops } = await request.json();
 
-    // Validación básica de datos
     if (!attackerId || !defenderId || !troops?.soldiers || troops.soldiers <= 0) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
 
-    // Cargar atacante, defensor y perfil del atacante en paralelo
     const [attacker, defender, attackerProfile] = await Promise.all([
       UserInstance.findOne({ userId: attackerId }),
       UserInstance.findOne({ userId: defenderId }),
@@ -62,15 +54,14 @@ export async function POST(request: NextRequest) {
     if (!attacker || !defender) {
       return NextResponse.json({ error: "Jugador no encontrado" }, { status: 404 });
     }
-
-    // Valores por defecto seguros
+  
     attacker.population ||= { villagers: 0, soldiers: 0, maxPopulation: 10 };
     defender.population ||= { villagers: 0, soldiers: 0, maxPopulation: 10 };
     attacker.resources ||= [];
     defender.resources ||= [];
     attacker.units ||= [];
     defender.units ||= [];
-
+    
     attacker.elo ||= 1200;
     defender.elo ||= 1200;
     attacker.trophies ||= 0;
@@ -79,7 +70,6 @@ export async function POST(request: NextRequest) {
     defender.totalBattles ||= 0;
     attacker.victories ||= 0;
 
-    // Determinar cuántos soldados realmente se envían 
     const attackerSoldiersSent = Math.min(attacker.population.soldiers, troops.soldiers);
     const defenderSoldiers = defender.population.soldiers;
 
@@ -87,32 +77,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No tienes soldados" }, { status: 400 });
     }
 
-    // Calcular poder y decidir ganador
     const attackerPower = calcPower(attackerSoldiersSent, attacker.level || 1);
     const defenderPower = calcPower(defenderSoldiers, defender.level || 1);
+    // se determina el ganador
     const attackerWins = attackerPower > defenderPower;
 
-    // Calcular bajas (20% si ganas, 80% si pierdes)
     const attackerLosses = Math.round(attackerSoldiersSent * (attackerWins ? 0.2 : 0.8));
     const defenderLosses = Math.round(defenderSoldiers * (attackerWins ? 0.8 : 0.2));
 
-    // Aplicar bajas
     attacker.population.soldiers = Math.max(0, attacker.population.soldiers - attackerLosses);
     defender.population.soldiers = Math.max(0, defender.population.soldiers - defenderLosses);
 
-    // Regenerar unidades soldado en el mapa
     syncUnitsWithSoldiers(attacker);
     syncUnitsWithSoldiers(defender);
 
-    // === SAQUEO (solo si el atacante gana) ===
     const loot: any = { gold: 0, food: 0, lumber: 0, stone: 0, money: 0 };
     if (attackerWins) {
       for (const resource of defender.resources) {
+        // calcular 15% de lo que tiene el defensor
         const stolen = Math.floor(resource.amount * 0.15);
         if (stolen > 0) {
+          // resta al perdedor
           resource.amount -= stolen;
           resource.markModified("amount");
-
+          // suma al ganador los recursosss robados
           const attackerRes = attacker.resources.find((r: any) => r.resource === resource.resource);
           if (attackerRes) {
             attackerRes.amount += stolen;
@@ -120,13 +108,12 @@ export async function POST(request: NextRequest) {
           } else {
             attacker.resources.push({ resource: resource.resource, amount: stolen });
           }
-
+          // guarda cuanto se robó de cada recurso
           loot[resource.resource] = (loot[resource.resource] || 0) + stolen;
         }
       }
     }
 
-    // === ELO Y TROFEOS ===
     const { winner, loser } = calculateNewElo(attacker.elo, defender.elo);
     if (attackerWins) {
       attacker.elo = winner;
@@ -144,14 +131,12 @@ export async function POST(request: NextRequest) {
     attacker.totalBattles += 1;
     defender.totalBattles += 1;
 
-    // Nombre bonito del atacante para el reporte
     const attackerName =
       attackerProfile?.name ||
       attackerProfile?.fullname ||
       attackerProfile?.email?.split("@")[0] ||
       "Guerrero Anónimo";
 
-    // === REPORTE PARA EL DEFENSOR ===
     const battleReport = {
       attackerId,
       attackerName,
@@ -169,14 +154,11 @@ export async function POST(request: NextRequest) {
     defender.battleReports.unshift(battleReport);
     if (defender.battleReports.length > 20) defender.battleReports = defender.battleReports.slice(0, 20);
 
-    // Necesario para que Mongoose detecte cambios en arrays y objetos anidados
     defender.markModified('battleReports');
     defender.markModified('resources');
-
-    // Guardar ambos jugadores
+    // guardamos la instancia de ambos jugadores
     await Promise.all([attacker.save(), defender.save()]);
 
-    // Respuesta al atacante con el resultado de la batalla
     const report = {
       attackerWins,
       attacker: {

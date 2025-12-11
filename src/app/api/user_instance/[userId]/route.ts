@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 // ============================================================
 // GET → Obtiene la instancia completa del jugador
 // ============================================================
+//mapsss 3
 export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
   try {
     await connect();
@@ -55,13 +56,17 @@ export async function POST(request: NextRequest, { params }: { params: { userId:
         { resource: 'stone', amount: 50 },
       ],
       population: body.population || { villagers: 0, maxPopulation: 0 },
-      map: { grid: generateMap(100), createdAt: new Date() },
+      // 
+      map: { 
+      grid: generateMap(100), 
+      createdAt: new Date() },
       units: [],
       aumentadores: [],
       location: { x: 0, y: 0 },
       level: 1,
     });
-
+    
+    //guarda en mongoDB
     await newInstance.save();
     return NextResponse.json(newInstance, { status: 201 });
 
@@ -99,8 +104,8 @@ export async function PATCH(
     const update: any = {};
     const arrayFilters: any[] = [];
 
-    // 1) CONSTRUIR EDIFICIO
-    if (body.building) {
+    // 1) CONSTRUIR EDIFICIOSSS 5
+    if (body.building) { // recibe el patch de edificiosss
       const structure = structuresForBackend.find((s) => s.type === body.building.type);
       if (!structure) return NextResponse.json({ error: 'Edificio no válido' }, { status: 400 });
       if (instance.level < structure.desbloqueo)
@@ -108,7 +113,7 @@ export async function PATCH(
       if (body.building.type === 'ayuntamiento' && instance.buildings.some((b: any) => b.type === 'ayuntamiento'))
         return NextResponse.json({ error: 'Ya existe un ayuntamiento' }, { status: 400 });
 
-      // Descontar recursos del costo
+      // Descontar recursos del costo 7
       const newResources = (instance.resources || []).map((r: any) => ({ ...r }));
       for (const [res, cost] of Object.entries(structure.cost)) {
         const found = newResources.find((x: any) => x.resource === res);
@@ -117,7 +122,7 @@ export async function PATCH(
       update.$set = { ...(update.$set || {}), resources: newResources };
       instance.resources = newResources;
 
-      // Agregar edificio
+      // Agregar edificiosss 6
       update.$push = { ...(update.$push || {}), buildings: body.building };
       instance.buildings.push(body.building);
 
@@ -139,7 +144,7 @@ export async function PATCH(
       update.$set = { ...update.$set, resources: newResources };
     }
 
-    // 3) CREAR UNIDADES (aldeanos, etc.)
+    // 3) CREAR UNIDADES (aldeanos, unidadesss)
     if (body.units) {
       const unitsArray = Array.isArray(body.units) ? body.units : [body.units];
       const preparedUnits = unitsArray.map((u: any) => ({
@@ -153,6 +158,7 @@ export async function PATCH(
 
       update.$push = { ...(update.$push || {}), units: { $each: preparedUnits } };
       if (villagersToAdd > 0) {
+        // aumentar población de aldeanos
         update.$inc = { ...(update.$inc || {}), 'population.villagers': villagersToAdd };
       }
     }
@@ -198,7 +204,7 @@ export async function PATCH(
       update.$inc = { ...(update.$inc || {}), 'buildings.$[elem].obreros': -1, 'population.villagers': 1 };
     }
 
-    // 8) ENTRENAR SOLDADO EN CUARTEL
+    // 8) ENTRENAR SOLDADOSSS EN CUARTEL
     if (body.addSoldier) {
       const soldier = body.addSoldier;
 
@@ -206,6 +212,7 @@ export async function PATCH(
         return NextResponse.json({ error: "No hay aldeanos disponibles" }, { status: 400 });
       }
 
+      // resto 1 aldeano y sumo soldadosss
       instance.population.villagers -= 1;
       instance.population.soldiers = (instance.population.soldiers || 0) + 1;
 
@@ -216,6 +223,7 @@ export async function PATCH(
         status: soldier.status || "idle",
       });
 
+      // resto 30 de comida para entrenar soldadosss
       const foodResource = instance.resources.find((r: any) => r.resource === "food");
       if (foodResource) {
         foodResource.amount = Math.max(0, foodResource.amount - 30);
@@ -248,12 +256,13 @@ export async function PATCH(
     const updateOptions: any = {};
     if (arrayFilters.length > 0) updateOptions.arrayFilters = arrayFilters;
 
+    // guarda en mongoDB 
     await UserInstance.updateOne(
       { userId: params.userId },
       update,
       updateOptions
     );
-
+    // devuelve la instancia actualizada 
     const updatedInstance = await UserInstance.findOne({ userId: params.userId });
     if (!updatedInstance) {
       return NextResponse.json({ error: 'Instancia no encontrada después de update' }, { status: 404 });

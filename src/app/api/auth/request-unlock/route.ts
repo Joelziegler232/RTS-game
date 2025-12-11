@@ -4,13 +4,11 @@ import User from "@/app/models/user";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
-// Ruta: POST /api/auth/request-unlock
 export async function POST(request: NextRequest) {
   try {
-    // Conectar a la base de datos
     await connect();
 
-    // Obtener email del cuerpo de la petición
+    // Obtener email del request
     const { email } = await request.json();
 
     // Validar que el email exista y tenga formato correcto
@@ -46,7 +44,7 @@ export async function POST(request: NextRequest) {
     user.unlockTokenExpires = new Date(Date.now() + 3600 * 1000); // 1 hora
     await user.save();
 
-    // Configurar Nodemailer para enviar correo
+    // Configurar Nodemailer para enviar correo desde gmail
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_SERVER_HOST,
       port: Number(process.env.EMAIL_SERVER_PORT),

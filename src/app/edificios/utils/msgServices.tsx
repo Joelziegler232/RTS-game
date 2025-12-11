@@ -1,9 +1,8 @@
 
 const baseURL = '/api';
 
-// =============================================
 // OBTENER TODOS LOS MENSAJES DEL BUZÓN GLOBAL
-// =============================================
+//messajesss 2
 export const getMessages = async () => {
   const response = await fetch(`${baseURL}/messages`);
 
@@ -14,10 +13,9 @@ export const getMessages = async () => {
   return response.json();
 };
 
-// =============================================
 // ENVIAR UN NUEVO MENSAJE AL BUZÓN GLOBAL
-// =============================================
 export const sendMessage = async (senderId: string, content: string) => {
+  // llama al backend para guardar el mensajesss
   const response = await fetch('/api/messages', {
     method: 'POST',
     headers: {

@@ -167,17 +167,15 @@ useEffect(() => {
   const handleInstanceUpdate = (event: any) => {
     const data = event.detail;
 
-    
+    // aca se actualizan las unidadesss
     if (data.units) {
       setUnits(data.units);
     }
-
     
     if (data.buildings) {
       setBarracksArray(data.buildings.filter((b: any) => b.type === "barracks"));
     }
 
-   
     if (data.level !== undefined) {
       user.level = data.level;
     }
@@ -194,7 +192,7 @@ async function reloadPlayerData() {
   const res = await fetch(`/api/user_instance/${user.id}`);
   const data = await res.json();
 
-  // Actualizar unidades
+  // Actualizar unidadesss
   setUnits(data.units || []);
 
   // Actualizar comida
@@ -299,6 +297,7 @@ const barracksMenu = useCallback(
 
     setBarracksInformation(cuartel);
     setVisibleBarracksDetails(true);
+     // refreshh
     window.dispatchEvent(new CustomEvent("openBuildingMenu"));
   },
   [localBuildings.barracks, visibleBarracksDetails, barracksInformation]
@@ -325,7 +324,7 @@ const barracksMenu = useCallback(
   },
   [localBuildings.ayuntamiento, ayunMenu, ayuntamientoInfo?.id]
 );
-
+  // dibujo del mapsss 4 con three.js
   useEffect(() => {
     const mountNode = mountRef.current;
     if (!mountNode || !gameMap) {
@@ -450,6 +449,7 @@ const barracksMenu = useCallback(
         const stoneMaterial = new THREE.SpriteMaterial({ map: stoneTex });
         const berryMaterial = new THREE.SpriteMaterial({ map: berryTex });
 
+        // dibujo de recursos del mapa
         gameMap.forEach((row, y) => {
           row.forEach((cell, x) => {
             let spriteMaterial;
@@ -534,44 +534,44 @@ const barracksMenu = useCallback(
             
           }),
           mercado: textureLoader.load('/mercado.png', (texture) => {
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-  }),
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          }),
 
-          
-        };
+                
+          };
 
-       [
-  ...lumberCampArray,
-  ...goldMineArray,
-  ...stoneMineArray,
-  ...millArray,
-  ...houseArray,
-  ...ayuntamientoArray,
-  ...barracksArray,
-  ...shipyardArray,
-  ...marketArray  
-].forEach((building) => {
-  const texture = buildingTextures[building.type as keyof typeof buildingTextures];
-  
-  const sprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({ 
-      map: texture ?? buildingTextures.house
-    })
-  );
-  
-  sprite.position.set(
-    building.position!.x - 50 + 0.5,
-    0.5,
-    building.position!.y - 50 + 0.5
-  );
-  sprite.scale.set(2, 2, 1);
-  sprite.userData = { id: building.id, type: building.type };
-  scene.add(sprite);
+            [
+          ...lumberCampArray,
+          ...goldMineArray,
+          ...stoneMineArray,
+          ...millArray,
+          ...houseArray,
+          ...ayuntamientoArray,
+          ...barracksArray,
+          ...shipyardArray,
+          ...marketArray  
+        ].forEach((building) => {
+        const texture = buildingTextures[building.type as keyof typeof buildingTextures];
+        
+        const sprite = new THREE.Sprite(
+          new THREE.SpriteMaterial({ 
+            map: texture ?? buildingTextures.house
+          })
+        );
+        
+        sprite.position.set(
+          building.position!.x - 50 + 0.5,
+          0.5,
+          building.position!.y - 50 + 0.5
+        );
+        sprite.scale.set(2, 2, 1);
+        sprite.userData = { id: building.id, type: building.type };
+        scene.add(sprite);
 
-  
-  
-});
+        
+        
+      });
 
         const animate = () => {
           if (rendererRef.current && sceneRef.current && cameraRef.current) {
@@ -738,6 +738,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
     [isDraggingCamera, draggingBuilding, gameMap, structure]
   );
 
+  // colocamos edificiosss en el mapa 3
   const handleMouseUp = useCallback(
     async (event: MouseEvent) => {
      
@@ -767,6 +768,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
         const intersects = raycaster.current.intersectObject(terrain);
         if (intersects.length > 0) {
           const point = intersects[0].point;
+          // calculo la posicion del tile edificiosss
           const tileX = Math.floor(point.x + 50);
           const tileY = Math.floor(point.z + 50);
 
@@ -823,25 +825,24 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
           if (isValidTerrain && !isOccupied) {
             const { img, ...structureWithoutImg } = selectedStructure;
 
-const newStructure: Structure = {
-  ...selectedStructure,   
+          // Crea nuevo edificiosss 4
+          const newStructure: Structure = {
+            ...selectedStructure,   
 
-  id: Date.now(),
-  position: { x: tileX, y: tileY },
+            id: Date.now(),
+            position: { x: tileX, y: tileY },
 
-  // Estado dinámico
-  obreros: 0,
-  capacity: 0,
+            obreros: 0,
+            capacity: 0,
 
-  updateTime:
-    selectedStructure.type === "lumber" ||
-    selectedStructure.type === "gold_mine" ||
-    selectedStructure.type === "stone_mine" ||
-    selectedStructure.type === "mill"
-      ? new Date()
-      : undefined,
-};
-
+            updateTime:
+              selectedStructure.type === "lumber" ||
+              selectedStructure.type === "gold_mine" ||
+              selectedStructure.type === "stone_mine" ||
+              selectedStructure.type === "mill"
+                ? new Date()
+                : undefined,
+          };
 
             if (user.id) {
               try {
@@ -851,6 +852,7 @@ const newStructure: Structure = {
                   position: newStructure.position
                 });
 
+                // llama al backend para construir los edificiosss
                 const response = await fetch(`/api/user_instance/${user.id}`, {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
@@ -871,7 +873,8 @@ const newStructure: Structure = {
                   }
                   return;
                 }
-                               const data = await response.json();
+                // obtener datos actualizados del backend de edificiosss
+                const data = await response.json();
 
                 // ACTUALIZAR RECURSOS (esto ya lo tenías)
                 await fetch(`/api/user_instance/${user.id}`, {
@@ -898,7 +901,7 @@ const newStructure: Structure = {
                 setBarracksArray(data.buildings.filter((b: any) => b.type === "barracks"));
                 setMarketArray(data.buildings.filter((b: any) => b.type === "mercado") || []);
 
-                // DISPARAR EVENTO
+                 // refreshh
                 window.dispatchEvent(new CustomEvent("buildingPlaced"));
 
                 // ENCONTRAR EL EDIFICIO QUE ACABÁS DE CONSTRUIR (con el ID del backend)
@@ -1123,7 +1126,7 @@ const assignVillager = async (buildingId: number) => {
     setStoneMineArray(updatedInstance.buildings.filter((b: any) => b.type === "stone_mine"));
     setMillArray(updatedInstance.buildings.filter((b: any) => b.type === "mill"));
 
-    // DISPARAR EVENTO → page.tsx actualiza TODO (recursos, aldeanos, nivel)
+     // refreshh
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updatedInstance }));
 
   } catch (err) {
@@ -1148,7 +1151,7 @@ const removeVillager = async (buildingId: number) => {
     setGoldMineArray(updatedInstance.buildings.filter((b: any) => b.type === "gold_mine"));
     setStoneMineArray(updatedInstance.buildings.filter((b: any) => b.type === "stone_mine"));
     setMillArray(updatedInstance.buildings.filter((b: any) => b.type === "mill"));
-
+     // refreshh
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updatedInstance }));
 
   } catch (err) {
@@ -1157,7 +1160,7 @@ const removeVillager = async (buildingId: number) => {
   }
 };
 
-
+// aca creamos la funcion de entrenar soldadosss 1
 const trainSoldier = async (buildingId: number) => {
  
   if (playerFood < 30) {
@@ -1173,9 +1176,7 @@ const trainSoldier = async (buildingId: number) => {
     return;
   }
 
-  
   setPlayerFood(prev => prev - 30);
-
 
   setTrainingSoldier({ id: buildingId, progress: 0 });
 
@@ -1190,16 +1191,18 @@ const trainSoldier = async (buildingId: number) => {
 
     if (elapsed >= duration) {
       clearInterval(timer);
+      // al terminar se llama a la funcion finishTraining 2
       finishTraining(buildingId);
     }
   }, interval);
 };
 
+
 const finishTraining = async (buildingId: number) => {
   try {
     const cuartel = barracksArray.find(b => b.id === buildingId);
     if (!cuartel) return;
-
+    // aca se crea la unidad de soldadosss 3
     const newSoldier = {
       id: Date.now().toString(),
       type: "soldier",
@@ -1209,7 +1212,7 @@ const finishTraining = async (buildingId: number) => {
       },
       status: "idle",
     };
-
+    // llamamos al backend para agregar el soldado user_instance 4
     const res = await fetch(`/api/user_instance/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -1220,9 +1223,10 @@ const finishTraining = async (buildingId: number) => {
 
     const updated = await res.json();
 
-    
+    // actualizar los soldadosss en el estado 5
     setUnits(updated.units || []);
     setTrainingSoldier(null); 
+     // refreshh
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updated }));
 
   } catch (err) {
@@ -1259,7 +1263,7 @@ const searchBattle = async () => {
       return;
     }
 
-  
+     // refreshh
     window.dispatchEvent(new CustomEvent('enemyFound', { detail: data.enemy }));
 
   } catch (err) {
@@ -1290,8 +1294,7 @@ const generadorActualizado: Generadores | null =
     <div>
       <div ref={mountRef} className={styles.mapContainer} />
       
-      {/* UNIDADES EN EL MAPA */}
-            {/* TODOS LOS EDIFICIOS */}
+      {/* renderizamos edificios en el mapa */}
       {(() => {
         const allBuildings = [
           ...lumberCampArray,
@@ -1303,7 +1306,7 @@ const generadorActualizado: Generadores | null =
           ...barracksArray,
           ...shipyardArray,
         ];
-
+        // renderizamos las unidades soldadosss aldeanosss en el mapa 6
         return units.map((unit) => (
           <Unit
             key={unit.id}
@@ -1318,40 +1321,35 @@ const generadorActualizado: Generadores | null =
         ));
       })()}
 
-      {/* DETALLES DE GENERADORES */}
+      {/* DETALLES DE GENERADORES al asiganar o quitar aldeanoss */}
       {visibleBuildingDetails && generadorActualizado && (
-        <BuildingDetails
-  buildingId={buildingInformation?.id || 0}
-  state={visibleBuildingDetails}
-  onAssignVillager={assignVillager}
-  onRemoveVillager={removeVillager}
-  allGenerators={[
-  ...(localBuildings.lumber as Generadores[]),
-  ...(localBuildings.goldMine as Generadores[]),
-  ...(localBuildings.stoneMine as Generadores[]),
-  ...(localBuildings.mill as Generadores[]),
-]}
-/>
-      )}
+      <BuildingDetails
+        buildingId={buildingInformation?.id || 0}
+        state={visibleBuildingDetails}
+        onAssignVillager={assignVillager}
+        onRemoveVillager={removeVillager}
+        allGenerators={[
+        ...(localBuildings.lumber as Generadores[]),
+        ...(localBuildings.goldMine as Generadores[]),
+        ...(localBuildings.stoneMine as Generadores[]),
+        ...(localBuildings.mill as Generadores[]),
+      ]}
+    />
+    )}
 
      {/* DETALLES DEL CUARTEL */}
-{visibleBarracksDetails && barracksInformation && (
-  <BarracksDetails
-    key={barracksInformation.id + "-lvl-" + playerLevel}
-    cuartel={barracksInformation}
-    state={visibleBarracksDetails}
-    buildingId={barracksInformation.id}
-    onTrainSoldier={trainSoldier}
-    playerLevel={playerLevel}   // ← 🔥 AHORA SÍ REACTIVO
-    trainingData={trainingSoldier}
-    onSearchBattle={searchBattle}  
-  />
-)}
-
-
-      
-      
-
-    </div>
+    {visibleBarracksDetails && barracksInformation && (
+    <BarracksDetails
+      key={barracksInformation.id + "-lvl-" + playerLevel}
+      cuartel={barracksInformation}
+      state={visibleBarracksDetails}
+      buildingId={barracksInformation.id}
+      onTrainSoldier={trainSoldier}
+      playerLevel={playerLevel}   // ← 🔥 AHORA SÍ REACTIVO
+      trainingData={trainingSoldier}
+      onSearchBattle={searchBattle}  
+      />
+    )}
+  </div>
   );
 }

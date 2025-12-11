@@ -30,16 +30,14 @@ export default function Progressbar({
   setUnits,
   setPlayerFood,
 }: ProgressbarProps) {
-  const [seconds, setSeconds] = useState(0);                    // Segundos transcurridos
-  const timePerUnit = unit.incrementador_time;                  // Tiempo total por unidad (5s)
-  const isCreatingUnit = useRef(false);                         // Evita crear múltiples a la vez
+  const [seconds, setSeconds] = useState(0);                    
+  const timePerUnit = unit.incrementador_time;                  
+  const isCreatingUnit = useRef(false);                
 
-  // Reinicia el contador cuando cambia la cola o se activa/desactiva
   useEffect(() => {
     setSeconds(0);
   }, [running, quantity]);
 
-  // Temporizador que avanza segundo a segundo
   useEffect(() => {
     if (!running || quantity <= 0) return;
 
@@ -47,6 +45,7 @@ export default function Progressbar({
       setSeconds((prev) => {
         if (prev >= timePerUnit) {
           clearInterval(interval);
+          // se crea la unidadesss 
           finishOneUnit(); 
           return 0;
         }
@@ -61,6 +60,7 @@ export default function Progressbar({
   if (isCreatingUnit.current) return;
   isCreatingUnit.current = true;
 
+  // Creamos la nueva unidadesss con posición cerca del ayuntamiento
   const newUnit = {
     id: uuidv4(),
     type: 'villager',
@@ -72,21 +72,20 @@ export default function Progressbar({
   };
 
   try {
-    // Guardamos la unidad
+    // Guardamos la unidad en el backend 
     await fetch(`/api/user_instance/${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ units: [newUnit] }),
     });
 
-   
-
+     // refreshh
     window.dispatchEvent(new CustomEvent("villagerCreated"));
 
   } catch (error) {
     console.error('Error:', error);
     alert('Error creando aldeano');
-    setQuantity(prev => prev - 1);  // Revierte si falla
+    setQuantity(prev => prev - 1);  
   } finally {
     setQuantity(0);
     if (quantity <= 1) {
@@ -96,15 +95,12 @@ export default function Progressbar({
   }
 };
 
-  // Calcula el porcentaje de progreso
   const progress = timePerUnit > 0 ? (seconds / timePerUnit) * 100 : 0;
 
-  // Si no está corriendo o no hay nada en cola → no renderiza nada
   if (!running || quantity === 0) return null;
 
   return (
     <div className="absolute left-1/2 top-4 -translate-x-1/2 z-50 bg-black/90 text-white px-6 py-4 rounded-xl shadow-2xl border border-cyan-500">
-      {/* Barra de progreso visual */}
       <div className="relative w-80 h-12 bg-gray-800 rounded-lg overflow-hidden border-2 border-cyan-400">
         <div
           className="h-full bg-gradient-to-r from-blue-600 via-cyan-500 to-green-500 transition-all duration-1000 ease-linear"
@@ -115,7 +111,6 @@ export default function Progressbar({
         </div>
       </div>
 
-      {/* Texto descriptivo */}
       <div className="text-center mt-3 text-xl font-bold text-cyan-300">
         Creando aldeano...
       </div>

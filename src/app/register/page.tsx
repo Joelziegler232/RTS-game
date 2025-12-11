@@ -3,7 +3,7 @@ import axios, { AxiosError } from 'axios';
 import { FormEvent, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-
+// registerrr 1
 function RegisterPage() {
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState<string | undefined>();
@@ -125,8 +125,8 @@ if (!/^[a-zA-Z0-9_]+$/.test(trimmedName)) {
               className="w-full p-2 border border-gray-700 rounded-lg text-white bg-gray-800 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600"
             />
             <p className="text-yellow-400 text-xs mt-1 text-center">
-  Solo letras, números y guiones bajos • Máx 20 caracteres
-</p>
+              Solo letras, números y guiones bajos • Máx 20 caracteres
+            </p>
           </div>
           <div className="w-full mb-4">
             <label htmlFor="email" className="text-white mb-1 block">Email</label>

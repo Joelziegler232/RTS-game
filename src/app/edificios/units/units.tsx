@@ -85,7 +85,7 @@ export default function Unit({
 
     const { x, y } = findValidPosition(initialPosition.x, initialPosition.y);
 
-    const texturePath = type === 'soldier' ? '/soldado.png' : '/Aldeana.png';
+    const texturePath = type === 'soldier' ? '/soldado.png' : '/aldeana.png';
     const loader = new THREE.TextureLoader();
 
     loader.load(

@@ -57,9 +57,9 @@ export default function CreacionMenu({
   const [creacionMenu, setCreacionMenu] = useState(true); 
   const [isCreatingUnit, setIsCreatingUnit] = useState(false);
 
-  // Función para crear un aldeano
+  // Función para crear un unidadesss 1
   const handleCreateVillager = async () => {
-    // Si ya hay uno en cola → no permitimos crear otro
+    // Si ya hay uno en cola no permitimos crear otro
     if (quantity > 0) {
       return;
     }
@@ -81,13 +81,13 @@ export default function CreacionMenu({
         return;
       }
 
-      // Validación: comida suficiente
+      // Validación: comida suficiente para crear unidadesss
       if (playerFood < 20) {
         alert('No tienes suficiente comida (20)');
         return;
       }
 
-      // Descontamos la comida localmente
+      // Descontamos la comida unidadesss
       setPlayerFood(prev => prev - 20);
 
       // Actualizamos en el backend
@@ -99,14 +99,13 @@ export default function CreacionMenu({
         })
       });
 
-      // Iniciamos la creación del aldeano
+      // Iniciamos la barra de creación de unidadesss
       setUnit(units_Array[0]);
       setQuantity(1);  
       setProgressBar(true);
 
     } catch (error) {
       console.error("Error:", error);
-      // Si falla, devolvemos la comida
       setPlayerFood(prev => prev + 20);
       alert("Error al iniciar creación");
     }
@@ -116,7 +115,6 @@ export default function CreacionMenu({
 
   return (
     <main>
-      {/* MENÚ DE UNIDADES  */}
       <div className={`fixed bottom-0 h-[100px] w-screen flex flex-row bg-transparent transition-all duration-300 ${creacionMenu ? 'translate-y-full' : 'translate-y-0'}`}>
         {units_Array.map((unit, index) => (
           <div
@@ -124,7 +122,6 @@ export default function CreacionMenu({
             className="sidebar-icon group cursor-pointer hover:scale-110 transition-transform"
             onClick={handleCreateVillager}
             style={{
-              // Deshabilitamos visualmente si no hay comida o ya hay uno en cola
               opacity: playerFood < 20 || isCreatingUnit ? 0.5 : 1,
               pointerEvents: playerFood < 20 || isCreatingUnit ? 'none' : 'auto'
             }}
@@ -141,7 +138,6 @@ export default function CreacionMenu({
         ))}
       </div>
 
-      {/* BOTÓN PRINCIPAL  */}
       <button
         onClick={() => setCreacionMenu(!creacionMenu)}
         className={`

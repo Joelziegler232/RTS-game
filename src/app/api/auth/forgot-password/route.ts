@@ -5,13 +5,11 @@ import ResetToken from "@/app/models/resetToken";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
-// Ruta: POST /api/auth/forgot-password
 export async function POST(request: NextRequest) {
   try {
-    // Conectar a la base de datos
     await connect();
 
-    // Obtener email del cuerpo de la petición
+    // Obtener email 
     const { email } = await request.json();
 
     // Validar que el email exista y tenga formato correcto
@@ -51,8 +49,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Construir enlace de restablecimiento
-   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+    
     // Enviar correo con el enlace
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,
@@ -72,7 +71,6 @@ const resetUrl = `${baseUrl}/reset-password?token=${token}`;
       { status: 200 }
     );
   } catch (error: any) {
-    // Capturar cualquier error inesperado
     console.error("Error en forgot-password:", error);
     return NextResponse.json(
       { error: "Error al procesar la solicitud" },

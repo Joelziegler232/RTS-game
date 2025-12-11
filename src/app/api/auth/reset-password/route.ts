@@ -4,16 +4,12 @@ import User from "@/app/models/user";
 import ResetToken from "@/app/models/resetToken";
 import bcrypt from "bcryptjs";
 
-// Ruta: POST /api/auth/reset-password
 export async function POST(request: NextRequest) {
   try {
-    // Conectar a la base de datos
     await connect();
 
-    // Obtener token y nueva contraseña del cuerpo de la petición
     const { token, password } = await request.json();
 
-    // Validar que vengan ambos campos
     if (!token || !password) {
       return NextResponse.json(
         { error: "Token y contraseña son obligatorios" },
@@ -21,7 +17,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar longitud mínima de la contraseña
     if (password.length < 6) {
       return NextResponse.json(
         { error: "La contraseña debe tener al menos 6 caracteres" },
@@ -29,7 +24,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar el token en la base de datos
     const resetToken = await ResetToken.findOne({ token });
     if (!resetToken) {
       return NextResponse.json(
@@ -38,7 +32,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar al usuario asociado al token
     const user = await User.findById(resetToken.userId);
     if (!user) {
       return NextResponse.json(
@@ -54,16 +47,14 @@ export async function POST(request: NextRequest) {
     user.password = hashedPassword;
     await user.save();
 
-    // Eliminar el token usado (para que no se pueda reutilizar)
+    // Eliminar el token usado 
     await ResetToken.deleteOne({ token });
 
-    // Respuesta exitosa
     return NextResponse.json(
       { message: "Contraseña restablecida con éxito" },
       { status: 200 }
     );
   } catch (error: any) {
-    // Capturar cualquier error inesperado
     console.error("Error en reset-password:", error);
     return NextResponse.json(
       { error: "Error al procesar la solicitud" },

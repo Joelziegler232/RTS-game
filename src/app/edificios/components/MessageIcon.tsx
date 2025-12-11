@@ -7,7 +7,7 @@ const MessageIcon = () => {
   const toggleInbox = () => {
     setShowInbox(!showInbox);
   };
-
+// messajesss 1
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {/* Botón flotante para abrir el buzón */}

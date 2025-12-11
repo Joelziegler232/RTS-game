@@ -84,6 +84,7 @@ const BuildingDrawer: React.FC<BuildingDrawerProps> = ({ open, onClose, onBuild,
     setSelectedBuilding(null);
   };
 
+  // elegimos el edificiosss a construir y el costo 1
   const handleBuild = () => {
     if (selectedBuilding) {
       setStructure(selectedBuilding.id);

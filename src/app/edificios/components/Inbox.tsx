@@ -52,9 +52,13 @@ const Inbox = () => {
   useEffect(() => {
     const fetch = async () => {
       const data = await getMessages();
+      // actualiza la lista de mensajes y muestra en el buzón
+      // messajesss 3
       setMessages(data);
     };
     fetch();
+    // refresca los mensajes cada 5 segundos
+    //messajesss 4
     const interval = setInterval(fetch, 5000); 
     return () => clearInterval(interval);
   }, []);

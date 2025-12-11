@@ -1,9 +1,7 @@
 
 import { Schema, model, models, Document } from 'mongoose';
 
-// ===========================
 // INTERFACES
-// ===========================
 interface IResource extends Document {
   resource: string;
   amount: number;
@@ -29,7 +27,6 @@ interface IUnit extends Document {
   position: { x: number; y: number };
   status: string;
 }
-
 interface IMap extends Document {
   grid: string[][];
   createdAt: Date;
@@ -62,7 +59,6 @@ interface IUserInstance extends Document {
   };
   level: number;
 
-  // SISTEMA DE RANKING Y BATALLAS
   elo: number;
   trophies: number;
   battlesToday: number;
@@ -70,17 +66,13 @@ interface IUserInstance extends Document {
   totalBattles: number;
   victories: number;
 
-  // NUEVO: Historial de ataques recibidos
   battleReports: IBattleReport[];
 }
 
-// ===========================
-// SCHEMAS
-// ===========================
-
+// schema de recursos
 const resourceSchema = new Schema<IResource>({
-  resource: { type: String, required: true },
-  amount: { type: Number, required: true },
+  resource: { type: String, required: true }, // gold, food, lumber, stone, etc.
+  amount: { type: Number, required: true }, // cantidad del recurso
 });
 
 const buildingSchema = new Schema<IBuilding>({
@@ -110,14 +102,15 @@ const unitSchema = new Schema<IUnit>({
   status: { type: String, default: 'idle' },
 });
 
+// map schema
 const mapSchema = new Schema<IMap>({
   grid: { type: [[String]], required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
-// ===========================
-// USER INSTANCE SCHEMA (CON HISTORIAL DE ATAQUES)
-// ===========================
+
+// se guarda la instancia del usuario
+
 const userInstanceSchema = new Schema<IUserInstance>({
   userId: { type: String, required: true, unique: true },
 
@@ -126,10 +119,14 @@ const userInstanceSchema = new Schema<IUserInstance>({
     y: { type: Number, required: true },
   },
 
-  resources: [resourceSchema],
+  // aca se guardan los recursosss, edificiosss, unidades, etc.
+  resources: [resourceSchema], // aca se guardan los recursosss 
+  // generadoresss edificiosss
   buildings: [buildingSchema],
+  // aca se guardan las unidadesss del jugador
   units: [unitSchema],
   aumentadores: [{ type: Schema.Types.Mixed }],
+  // mapsss 2
   map: mapSchema,
 
   population: {
@@ -148,7 +145,7 @@ const userInstanceSchema = new Schema<IUserInstance>({
   totalBattles: { type: Number, default: 0 },
   victories: { type: Number, default: 0 },
 
-  // HISTORIAL DE ATAQUES RECIBIDOS
+  // aca se guarda lo que se le roba a otros jugadores en las batallas
   battleReports: [
     {
       attackerId: { type: String, required: true },

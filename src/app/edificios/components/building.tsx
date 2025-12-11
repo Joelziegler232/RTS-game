@@ -147,6 +147,7 @@ export default function BuildingDetails({
           fontSize: "16px",
           fontWeight: "bold",
         }}
+         // refreshh
         onClick={() => window.dispatchEvent(new CustomEvent("closeBuildingMenu"))}
       >
         Cerrar

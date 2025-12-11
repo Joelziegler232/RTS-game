@@ -21,8 +21,7 @@ const MapViewer: React.FC = () => {
           }
 
           const userInstance = await response.json();
-
-          // Debug: ver primera fila del mapa
+          
           console.log("Mapa recibido (primera fila):", userInstance.map?.grid?.[0]);
 
           if (userInstance.map?.grid) {
@@ -44,10 +43,8 @@ const MapViewer: React.FC = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">Visor de Mapa</h1>
 
-      {/* Mensaje de error */}
       {error && <p className="text-red-500 font-medium mb-4">{error}</p>}
 
-      {/* Mapa renderizado */}
       {map ? (
         <div>
           <h2 className="text-2xl font-semibold mb-4">Tu Mapa (100x100)</h2>
@@ -67,17 +64,17 @@ const MapViewer: React.FC = () => {
                 className="w-2 h-2" 
                 style={{
                   backgroundColor:
-                    cell === "water" ? "#1e40af" :      // azul oscuro
-                    cell === "sand" ? "#fde047" :       // amarillo arena
-                    cell === "plains" ? "#86efac" :     // verde claro
-                    cell === "forest" ? "#166534" :     // verde bosque
-                    cell === "mountain" ? "#6b7280" :   // gris montaña
-                    cell === "tree" ? "#22c55e" :       // verde árbol
-                    cell === "palm" ? "#84cc16" :       // verde lima
-                    cell === "gold" ? "#fbbf24" :       // dorado
-                    cell === "stone" ? "#94a3b8" :      // gris piedra
-                    cell === "berry" ? "#ec4899" :      // rosa bayas
-                    "#000000", // fallback negro
+                    cell === "water" ? "#1e40af" :    
+                    cell === "sand" ? "#fde047" :     
+                    cell === "plains" ? "#86efac" :    
+                    cell === "forest" ? "#166534" :     
+                    cell === "mountain" ? "#6b7280" :   
+                    cell === "tree" ? "#22c55e" :       
+                    cell === "palm" ? "#84cc16" :       
+                    cell === "gold" ? "#fbbf24" :       
+                    cell === "stone" ? "#94a3b8" :     
+                    cell === "berry" ? "#ec4899" :      
+                    "#000000", 
                 }}
               />
             ))}

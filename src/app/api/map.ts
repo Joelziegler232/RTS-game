@@ -1,8 +1,6 @@
-// app/api/map.ts
 import { NextResponse } from "next/server";
 import { createMap, getMaps } from "./mapController";
 
-// Ruta para generar un nuevo mapa
 export async function POST() {
   try {
     const map = await createMap();
@@ -16,11 +14,10 @@ export async function POST() {
   }
 }
 
-// Ruta para obtener todos los mapas
 export async function GET() {
     try {
       const maps = await getMaps();
-      console.log("Maps retrieved:", maps); // Asegúrate de que este log muestre los mapas
+      console.log("Maps retrieved:", maps); 
       return NextResponse.json(maps);
     } catch (error: unknown) {
       console.error("Error retrieving maps:", error);

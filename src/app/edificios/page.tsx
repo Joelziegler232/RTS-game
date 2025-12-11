@@ -43,16 +43,17 @@ export default function Home() {
   const [playerPopulationCap, setPlayerPopulationCap] = useState(0);
   const [playerLevel, setPlayerLevel] = useState(1);
 
+  // Arrays en memoria de edificios generadoresss 2
   const [lumberCampArray, setLumberCampArray] = useState<Structure[]>([]);
   const [goldMineArray, setGoldMineArray] = useState<Structure[]>([]);
   const [stoneMineArray, setStoneMineArray] = useState<Structure[]>([]);
   const [millArray, setMillArray] = useState<Structure[]>([]);
+ 
   const [houseArray, setHouseArray] = useState<Structure[]>([]);
   const [ayuntamientoArray, setAyuntamientoArray] = useState<Structure[]>([]);
   const [barracksArray, setBarracksArray] = useState<Structure[]>([]);
   const [shipyardArray, setShipyardArray] = useState<Structure[]>([]);
   const [marketArray, setMarketArray] = useState<Structure[]>([]);
-
 
   const [units, setUnits] = useState<any[]>([]);
   const soldierCount = units.filter(u => u.type === "soldier").length;
@@ -67,7 +68,8 @@ const [lastReport, setLastReport] = useState<any>(null);
 const [showAttackAlert, setShowAttackAlert] = useState(false);
 const [latestAttack, setLatestAttack] = useState<any>(null);
 const [seenAttacks, setSeenAttacks] = useState<Set<string>>(new Set());
-
+// aca se calcula la población total del jugador unidadesss
+//refreshh
 const totalPopulation = playerVillagers + 
   (lumberCampArray.reduce((sum, b) => sum + (b.obreros || 0), 0) +
    goldMineArray.reduce((sum, b) => sum + (b.obreros || 0), 0) +
@@ -151,7 +153,7 @@ useEffect(() => {
           const data = await res.json();
           setUnits(data.units || []);
           setPlayerFood(data.resources.find((r: any) => r.resource === "food")?.amount || 0);
-         
+         // actualizar población refreshh
           window.dispatchEvent(new CustomEvent("playerPopulationUpdate", {
             detail: {
               villagers: data.population.villagers,
@@ -206,6 +208,7 @@ useEffect(() => {
         const user = await userResponse.json();
         console.log('Datos del usuario cargados:', user);
 
+        // cargar instancia del usuario llama a GET
         const instanceResponse = await fetch(`/api/user_instance/${session.user.id}`);
 
         if (!instanceResponse.ok) {
@@ -243,9 +246,11 @@ useEffect(() => {
             const retryResponse = await fetch(`/api/user_instance/${session.user.id}`);
             if (!retryResponse.ok) throw new Error('Error al recargar instancia creada');
 
+            // obtener datos de la instancia GET nuevamente userinstance/useridv
             const instance = await retryResponse.json();
-
-            setGameMap(instance.map.grid);
+            
+            // recibe el mapa y lo setea
+            setGameMap(instance.map.grid); // lo guarda en userinstance.map
             setLumberCampArray([]);
             setGoldMineArray([]);
             setStoneMineArray([]);
@@ -297,7 +302,7 @@ useEffect(() => {
 
           throw new Error('Error al cargar instancia');
         }
-
+        
         const instance = await instanceResponse.json();
         console.log('Datos cargados:', instance);
 
@@ -329,6 +334,7 @@ setPlayerVillagers(villagersFromBackend);
 setFreeVillagers(villagersFromBackend); 
         setPlayerPopulationCap(Number(instance.population?.maxPopulation) || 0);
         setPlayerLevel(Number(instance.level) || 1); 
+        // refreshh
         window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
   detail: Number(instance.level) 
 }));
@@ -368,8 +374,9 @@ setFreeVillagers(villagersFromBackend);
     fetchUserData();
   }, [session]);
 
- // ACTUALIZACIÓN AUTOMÁTICA SIN ROMPER RECURSOS (ESTE ES EL BUENO)
+ // ACTUALIZACIÓN AUTOMÁTICA de instancia al crear edificios o unidades
 useEffect(() => {
+  // función  refreshh 1
   const refreshOnAction = () => {
     if (!session?.user?.id) return;
 
@@ -380,9 +387,10 @@ useEffect(() => {
 
         // Solo actualizamos lo que cambió (nivel, aldeanos, edificios)
         setPlayerLevel(prev => instance.level || prev || 1);
+         // refreshh
         window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
-  detail: instance.level 
-}));
+        detail: instance.level 
+        }));
 
         setPlayerVillagers(prev => instance.population?.villagers ?? prev ?? 0);
         setFreeVillagers(instance.population?.villagers ?? 0);
@@ -411,7 +419,7 @@ useEffect(() => {
       })
       .catch(err => console.error("Error en refreshOnAction:", err));
   };
-
+  // refreshh
   window.addEventListener("buildingPlaced", refreshOnAction);
   window.addEventListener("villagerCreated", refreshOnAction);
   window.addEventListener("instanceUpdated", refreshOnAction);
@@ -424,6 +432,7 @@ useEffect(() => {
 }, [session?.user?.id, seenAttacks]);
 // === DISPARAR EVENTO CUANDO CAMBIAN LOS EDIFICIOS (para que MapBuildings se entere) ===
 useEffect(() => {
+   // refreshh
   window.dispatchEvent(new CustomEvent("mapBuildingsRefresh"));
 }, [
   ayuntamientoArray,
@@ -506,19 +515,18 @@ useEffect(() => {
   ]);
 
  
-  // =============================
-  //   RECURSOS POR SEGUNDOS
-  // =============================
-
+// Producción de recursos por segundo
+// generadoresss 3
 useEffect(() => {
   if (!session?.user?.id) return;
 
-  const interval = setInterval(() => {
+  // refresca cada segundo refreshh
+  const interval = setInterval(() => { // setInterval hace que se ejecute cada segundo los recursos
     let goldPerSec = 0;
     let lumberPerSec = 0;
     let stonePerSec = 0;
     let foodPerSec = 0;
-
+    // recorre todos los edificios generadoresss 4
     goldMineArray.forEach(m => {
       const base = m.produccion_hora || 0;
       const workers = m.obreros || 0;
@@ -543,6 +551,7 @@ useEffect(() => {
       lumberPerSec += (base + base * 0.5 * workers) / 3600;
     });
 
+    // se actualizan los recursos 
     if (goldPerSec > 0) setPlayerGold(p => p + goldPerSec);
     if (lumberPerSec > 0) setPlayerLumber(p => p + lumberPerSec);
     if (stonePerSec > 0) setPlayerStone(p => p + stonePerSec);
@@ -572,7 +581,7 @@ useEffect(() => {
       }),
     });
   };
-
+  // Guardado automático cada 2 minutos refreshh
   const saveInterval = setInterval(saveResources, 120000);
 
   window.addEventListener('beforeunload', saveResources);
@@ -599,17 +608,16 @@ useEffect(() => {
 
       const freshData = await res.json();
 
-     
-
       setPlayerVillagers(freshData.population?.villagers || 0);
       setFreeVillagers(freshData.population?.villagers || 0);
       setPlayerPopulationCap(freshData.population?.maxPopulation || 0);
       if (freshData.level !== undefined) {
-  setPlayerLevel(freshData.level);
-  window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
-    detail: freshData.level 
-  }));
-}
+      setPlayerLevel(freshData.level);
+       // refreshh
+      window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
+      detail: freshData.level 
+      }));
+      }
 
       // Recursos
       const r = freshData.resources || [];
@@ -629,14 +637,14 @@ setBarracksArray(freshData.buildings?.filter((b: any) => b.type === "barracks") 
 setShipyardArray(freshData.buildings?.filter((b: any) => b.type === "shipyard") || []);
 setMarketArray(freshData.buildings?.filter((b: any) => b.type === "mercado") || []);
 
-      
+       // refreshh
       window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: freshData }));
 
     } catch (err) {
       console.error("Error recargando tras batalla:", err);
     }
 
-    
+     // refreshh
     window.dispatchEvent(new CustomEvent("showBattleReport", { detail: report }));
   };
 
@@ -655,28 +663,29 @@ useEffect(() => {
 //  SINCRONIZACIÓN TOTAL CON BACKEND
 // =============================
 useEffect(() => {
+  // refreshh
+  // función para actualizar todos los datos desde el backend
   const updateFromBackend = (e: any) => {
     const data = e.detail;
     if (!data) return;
 
-    
     setPlayerVillagers(data.population?.villagers || 0);
     setFreeVillagers(data.population?.villagers || 0); 
     setPlayerPopulationCap(data.population?.maxPopulation || 0);
-        setUnits(data.units || []);                  
+    setUnits(data.units || []);                  
     setPlayerVillagers(data.population?.villagers || 0);
     setFreeVillagers(data.population?.villagers || 0); 
     setPlayerPopulationCap(data.population?.maxPopulation || 0);
 
     setLumberCampArray(data.buildings?.filter((b: any) => b.type === "lumber") || []);
-setGoldMineArray(data.buildings?.filter((b: any) => b.type === "gold_mine") || []);
-setStoneMineArray(data.buildings?.filter((b: any) => b.type === "stone_mine") || []);
-setMillArray(data.buildings?.filter((b: any) => b.type === "mill") || []);
-setHouseArray(data.buildings?.filter((b: any) => b.type === "house") || []);
-setAyuntamientoArray(data.buildings?.filter((b: any) => b.type === "ayuntamiento") || []);
-setBarracksArray(data.buildings?.filter((b: any) => b.type === "barracks") || []);
-setShipyardArray(data.buildings?.filter((b: any) => b.type === "shipyard") || []);
-setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
+    setGoldMineArray(data.buildings?.filter((b: any) => b.type === "gold_mine") || []);
+    setStoneMineArray(data.buildings?.filter((b: any) => b.type === "stone_mine") || []);
+    setMillArray(data.buildings?.filter((b: any) => b.type === "mill") || []);
+    setHouseArray(data.buildings?.filter((b: any) => b.type === "house") || []);
+    setAyuntamientoArray(data.buildings?.filter((b: any) => b.type === "ayuntamiento") || []);
+    setBarracksArray(data.buildings?.filter((b: any) => b.type === "barracks") || []);
+    setShipyardArray(data.buildings?.filter((b: any) => b.type === "shipyard") || []);
+    setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
 
     setPlayerFood(data.resources?.find((r: any) => r.resource === "food")?.amount || 0);
     setPlayerGold(data.resources?.find((r: any) => r.resource === "gold")?.amount || 0);
@@ -694,6 +703,7 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
   const handleOpenDrawer = () => setDrawerOpen(true);
   const handleCloseDrawer = () => setDrawerOpen(false);
 
+  // recibe costo de los edificiosss 2
  const handleBuild = useCallback((cost: {
   gold?: number;
   money?: number;
@@ -717,6 +727,7 @@ setMarketArray(data.buildings?.filter((b: any) => b.type === "mercado") || []);
   const newStone = Number(playerStone) - (cost.stone || 0);
 
   if (newGold >= 0 && newMoney >= 0 && newFood >= 0 && newLumber >= 0 && newStone >= 0) {
+    // guarda el costo de los edificiosss y actualiza los recursos
     setPendingBuildCost(cost);
     handleCloseDrawer();
   } else {
@@ -819,7 +830,7 @@ const searchBattle = async () => {
       return;
     }
 
-   
+     // refreshh
     window.dispatchEvent(new CustomEvent('battleResult', { detail: data.report }));
 
    
@@ -858,29 +869,27 @@ const searchBattle = async () => {
 
       {/* =============================
           RESOURCE BAR
-      ============================= */}
+      // aca se muentra las unidadesss y recursosss */}
       <div className={styles.resourceBar}>
-  <div className={styles.populationItem}>
-  Población: {totalPopulation}/{playerPopulationCap}
-</div>
+      <div className={styles.populationItem}>
+      Población: {totalPopulation}/{playerPopulationCap}
+      </div>
 
-  <div className={styles.levelItem}>
-    Nivel: {playerLevel}
-  </div>
-
-  <div className={styles.resourceItem}>Soldados: {soldierCount}</div>
-<div className={styles.resourceItem}>
-  Aldeanos Disponibles: {playerVillagers}
-</div>
-
-
-
-  <div className={styles.resourceItem}>Madera: {Math.floor(playerLumber)}</div>
-  <div className={styles.resourceItem}>Comida: {Math.floor(playerFood)}</div>
-  <div className={styles.resourceItem}>Piedras: {Math.floor(playerStone)}</div>
-  <div className={styles.resourceItem}>Oro: {Math.floor(playerGold)}</div>
-  <div className={styles.resourceItem}>Dinero: {Math.floor(playerMoney)}</div>
-</div>
+        <div className={styles.levelItem}>
+          Nivel: {playerLevel}
+        </div>
+        
+        <div className={styles.resourceItem}>Soldados: {soldierCount}</div>
+        <div className={styles.resourceItem}>
+          Aldeanos Disponibles: {playerVillagers}
+        </div>
+        {/* el HUD redondea y muentra los recursos de generadoresss en el HUD 5*/ }
+        <div className={styles.resourceItem}>Madera: {Math.floor(playerLumber)}</div>
+        <div className={styles.resourceItem}>Comida: {Math.floor(playerFood)}</div> 
+        <div className={styles.resourceItem}>Piedras: {Math.floor(playerStone)}</div>
+        <div className={styles.resourceItem}>Oro: {Math.floor(playerGold)}</div>
+        <div className={styles.resourceItem}>Dinero: {Math.floor(playerMoney)}</div>
+      </div>
 
 
       {/* =============================
@@ -900,12 +909,12 @@ const searchBattle = async () => {
           setPlayerFood={setPlayerFood}
           ayunMenu={ayuntamientoMenu}
           lumberCampArray={lumberCampArray}
-  goldMineArray={goldMineArray}
-  stoneMineArray={stoneMineArray}
-  millArray={millArray}
-  soldierCount={soldierCount}
+          goldMineArray={goldMineArray}
+          stoneMineArray={stoneMineArray}
+          millArray={millArray}
+          soldierCount={soldierCount}
         />
-      )}
+        )}
 
       {/* =============================
           BARRA DE PROGRESO 
@@ -929,61 +938,61 @@ const searchBattle = async () => {
           MAPA + EDIFICIOS + UNIDADES
       ============================= */}
       <MapBuildings
-  setAyuntamientoMenu={setAyuntamientoMenu}
-  ayunMenu={ayuntamientoMenu}
-  gameMap={gameMap}
+        setAyuntamientoMenu={setAyuntamientoMenu}
+        ayunMenu={ayuntamientoMenu}
+        gameMap={gameMap}
 
-  lumberCampArray={lumberCampArray}
-goldMineArray={goldMineArray}
-stoneMineArray={stoneMineArray}
-millArray={millArray}
-houseArray={houseArray}
-ayuntamientoArray={ayuntamientoArray}
-barracksArray={barracksArray}
-shipyardArray={shipyardArray}
-freeVillagers={freeVillagers}
-  structure={structure}
-  setStructure={setStructure}
+        lumberCampArray={lumberCampArray}
+        goldMineArray={goldMineArray}
+        stoneMineArray={stoneMineArray}
+        millArray={millArray}
+        houseArray={houseArray}
+        ayuntamientoArray={ayuntamientoArray}
+        barracksArray={barracksArray}
+        shipyardArray={shipyardArray}
+        freeVillagers={freeVillagers}
+        structure={structure}
+        setStructure={setStructure}
 
-  setLumberCampArray={setLumberCampArray}
-  setGoldMineArray={setGoldMineArray}
-  setStoneMineArray={setStoneMineArray}
-  setMillArray={setMillArray}
-  setHouseArray={setHouseArray}
-  setAyuntamientoArray={setAyuntamientoArray}
-  setBarracksArray={setBarracksArray}
-  setShipyardArray={setShipyardArray}
+        setLumberCampArray={setLumberCampArray}
+        setGoldMineArray={setGoldMineArray}
+        setStoneMineArray={setStoneMineArray}
+        setMillArray={setMillArray}
+        setHouseArray={setHouseArray}
+        setAyuntamientoArray={setAyuntamientoArray}
+        setBarracksArray={setBarracksArray}
+        setShipyardArray={setShipyardArray}
 
-  user={userData}
-  setAppliedAumentar={() => {}}
-  progressBar={progressBar}
-  units={units}
-  setUnits={setUnits}
-  playerFood={playerFood}
-  setPlayerFood={setPlayerFood}
-  
- marketArray={marketArray}
-  setMarketArray={setMarketArray}
-  playerLevel={playerLevel}
+        user={userData}
+        setAppliedAumentar={() => {}}
+        progressBar={progressBar}
+        units={units}
+        setUnits={setUnits}
+        playerFood={playerFood}
+        setPlayerFood={setPlayerFood}
+        
+        marketArray={marketArray}
+        setMarketArray={setMarketArray}
+        playerLevel={playerLevel}
 
-/>
+      />
 
 
-    <BattleModal
-  open={battleOpen}
-  onClose={() => {
-    setBattleOpen(false);
-    setBattleEnemy(null);
-  }}
-  enemy={battleEnemy}
-  onAttack={handleAttack}
-  loading={battleLoading}
-  onSearchAgain={() => {
-    setBattleOpen(false);
-    setBattleEnemy(null);
-    searchBattle(); 
-  }}
-/>
+      <BattleModal
+        open={battleOpen}
+        onClose={() => {
+          setBattleOpen(false);
+          setBattleEnemy(null);
+        }}
+        enemy={battleEnemy}
+        onAttack={handleAttack}
+        loading={battleLoading}
+        onSearchAgain={() => {
+          setBattleOpen(false);
+          setBattleEnemy(null);
+          searchBattle(); 
+        }}
+      />
 
 
       {/* =============================
@@ -1042,32 +1051,33 @@ freeVillagers={freeVillagers}
             </div>
 
             <button
-  onClick={() => {
-    setShowAttackAlert(false);
-    if (latestAttack) {
-      const attackId = latestAttack._id || latestAttack.timestamp;
-      const updatedSeen = new Set(seenAttacks);
-      updatedSeen.add(attackId);
-      setSeenAttacks(updatedSeen);
-      localStorage.setItem("seenAttacks", JSON.stringify(Array.from(updatedSeen)));
-    }
-  }}
-  className="mt-12 px-24 py-8 bg-red-700 hover:bg-red-600 text-white text-5xl font-black rounded-full shadow-2xl transition-all transform hover:scale-110"
->
-  CERRAR
-</button>
-          </motion.div>
-        </div>
-      )}
+            onClick={() => {
+              setShowAttackAlert(false);
+              if (latestAttack) {
+                const attackId = latestAttack._id || latestAttack.timestamp;
+                const updatedSeen = new Set(seenAttacks);
+                updatedSeen.add(attackId);
+                setSeenAttacks(updatedSeen);
+                localStorage.setItem("seenAttacks", JSON.stringify(Array.from(updatedSeen)));
+              }
+            }}
+            className="mt-12 px-24 py-8 bg-red-700 hover:bg-red-600 text-white text-5xl font-black rounded-full shadow-2xl transition-all transform hover:scale-110"
+          >
+            CERRAR
+          </button>
+                    </motion.div>
+                  </div>
+                )}
 
-<BattleResultModal
-  open={showResult}
-  report={lastReport}
-  onClose={() => {
-    setShowResult(false);
-    setLastReport(null);
-  }}
-/>
+          <BattleResultModal
+            open={showResult}
+            report={lastReport}
+            onClose={() => {
+              setShowResult(false);
+              setLastReport(null);
+            }}
+          />
+          {/*edificiosss */}
           <BuildDrawer
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}

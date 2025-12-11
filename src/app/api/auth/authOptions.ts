@@ -1,4 +1,3 @@
-// src/app/api/auth/authOptions.ts
 import { NextAuthOptions, Session } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { connect } from '@/app/libs/mongodb';
@@ -14,7 +13,7 @@ interface ExtendedJWT extends JWT {
     profilePicture?: string | null;
   };
 }
-
+// configuracion de nextauthss para iniciooo de sesión con credenciales
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -35,9 +34,11 @@ export const authOptions: NextAuthOptions = {
         if (!user) throw new Error('Email o contraseña inválidos');
         if (user.isLocked) throw new Error('Tu cuenta está bloqueada');
 
+        // verifica la contraseña
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
           user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+          // bloquea al usuario despues de 3 intentos fallidos
           if (user.failedLoginAttempts >= 3) user.isLocked = true;
           await user.save();
           throw new Error('Email o contraseña inválidos');

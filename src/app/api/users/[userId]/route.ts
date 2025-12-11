@@ -3,7 +3,6 @@ import { connect } from "@/app/libs/mongodb";
 import User from "@/app/models/user";
 import { uploadToCloudinary, deleteFromCloudinary } from "@/app/utils/cloudinary";
 
-// GET → Obtiene datos públicos del perfil de un usuario
 export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
   try {
     await connect();
@@ -22,7 +21,6 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-// PATCH → Actualiza nombre y/o foto de perfil del usuario
 export async function PATCH(request: NextRequest, { params }: { params: { userId: string } }) {
   try {
     await connect();
@@ -34,17 +32,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { userId
 
     const contentType = request.headers.get("content-type") || "";
 
-    // === 1) ACTUALIZAR CON FOTO (multipart/form-data) ===
+    // === 1) ACTUALIZAR CON FOTO 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       const fullname = formData.get("fullname") as string | null;
       const profilePicture = formData.get("profilePicture") as File | null;
-
-      // Cambiar nombre (con validación de unicidad)
+      
       if (fullname && fullname.trim() !== user.fullname) {
         const newName = fullname.trim();
 
-        // Validar longitud
         if (newName.length < 3 || newName.length > 20) {
           return NextResponse.json(
             { error: "El nombre debe tener entre 3 y 20 caracteres" },
@@ -52,7 +48,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { userId
           );
         }
 
-        // Solo letras, números y guiones bajos
         if (!/^[a-zA-Z0-9_]+$/.test(newName)) {
           return NextResponse.json(
             { error: "Solo letras, números y guiones bajos" },

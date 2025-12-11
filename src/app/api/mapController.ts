@@ -1,11 +1,9 @@
-// src/app/api/mapController.ts
+
 import { MapModel } from "../models/map";
 import * as perlin from "perlin-noise";
 
-// Tamaño del mapa (100x100)
 const GRID_SIZE = 100;
 
-// Convierte un valor de ruido Perlin en un tipo de terreno
 export function mapNoiseToResource(noiseValue: number): string {
   if (noiseValue < 0.1) return "water";
   if (noiseValue < 0.4) return "sand";
@@ -14,9 +12,8 @@ export function mapNoiseToResource(noiseValue: number): string {
   return "mountain";
 }
 
-// Genera un mapa completo de 100x100 con terrenos y recursos
 export function generateMap(gridSize: number): string[][] {
-  // 1) Base con ruido Perlin (6 octavas)
+  // 1) Generar ruido Perlin base para el terreno
   const perlinGrid = perlin.generatePerlinNoise(gridSize, gridSize, { octaveCount: 6 });
   const map: string[][] = Array.from({ length: gridSize }, (_, y) =>
     Array.from({ length: gridSize }, (_, x) => mapNoiseToResource(perlinGrid[y * gridSize + x]))
@@ -97,7 +94,7 @@ export const createMap = async () => {
   return newMap;
 };
 
-// Obtiene todos los mapas guardados (ordenados por fecha, más nuevo primero)
+// Obtiene todos los mapas guardados 
 export const getMaps = async () => {
   return await MapModel.find().sort({ createdAt: -1 });
 };

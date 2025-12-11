@@ -145,6 +145,7 @@ export default function BarracksDetails({
           fontSize: "14px",
         }}
         onClick={() =>
+           // refreshh
           window.dispatchEvent(new CustomEvent("closeBuildingMenu"))
         }
       >
