@@ -5,7 +5,7 @@ export interface Tile {
   x: number;
   y: number;
   terrainType: TerrainType;
-  buildingId?: string; // Para conectar con tus edificios (opcional por ahora)
+  buildingId?: string; 
 }
 
 export interface GameMap {

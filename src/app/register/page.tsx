@@ -13,7 +13,7 @@ function RegisterPage() {
   const [fullname, setFullname] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const router = useRouter();
-
+  
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(undefined);
@@ -46,6 +46,7 @@ if (!/^[a-zA-Z0-9_]+$/.test(trimmedName)) {
     }
 
     try {
+      // se crea el form data
       const formData = new FormData();
       formData.append('fullname', fullname.trim());
       formData.append('email', email);
@@ -53,13 +54,14 @@ if (!/^[a-zA-Z0-9_]+$/.test(trimmedName)) {
       if (profilePicture) formData.append('profilePicture', profilePicture);
 
       console.log('Enviando datos a /api/auth/signup:', { fullname, email, password, profilePicture });
-
+      // se envia el form data a la api
       const signupResponse = await axios.post('/api/auth/signup', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       console.log('Respuesta de /api/auth/signup:', signupResponse.data);
-
+      
+      // iniciar sesión automáticamente después del registro
       const res = await signIn('credentials', {
         email: signupResponse.data.email,
         password,

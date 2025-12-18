@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Generar token seguro y único para restablecer contraseña
     const token = crypto.randomBytes(32).toString("hex");
 
-    // Guardar token en la colección ResetToken (expira en 1 hora por defecto del modelo)
+    // Guardar token en ResetToken (expira en 1 hora )
     await ResetToken.create({
       userId: user._id,
       token,

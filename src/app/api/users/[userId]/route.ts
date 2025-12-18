@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { userId
 
     const contentType = request.headers.get("content-type") || "";
 
-    // === 1) ACTUALIZAR CON FOTO 
+    // actualizar datos del usuario con form data desde panel.tsx
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       const fullname = formData.get("fullname") as string | null;
@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { userId
             { status: 400 }
           );
         }
-
+        
         if (!/^[a-zA-Z0-9_]+$/.test(newName)) {
           return NextResponse.json(
             { error: "Solo letras, números y guiones bajos" },

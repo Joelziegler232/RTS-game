@@ -18,6 +18,7 @@ const LoginPage: React.FC = () => {
     setSuccess(undefined);
 
     try {
+      //llamamos a signIn de next-auth
       const res = await signIn("credentials", {
         email,
         password,
@@ -58,6 +59,7 @@ const LoginPage: React.FC = () => {
     }
 
     try {
+      // hacemos la petición a la API para solicitar el desbloqueo
       const response = await axios.post("/api/auth/request-unlock", { email });
       setSuccess("Correo de desbloqueo enviado. Revisa tu bandeja de entrada.");
     } catch (error: any) {

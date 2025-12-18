@@ -9,20 +9,19 @@ import { generateMap } from "@/app/api/mapController";
 export async function POST(request: NextRequest) {
   try {
     await connect();
-
+    // se recibe el form data
     const formData = await request.formData();
     const fullname = formData.get("fullname") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const profilePicture = formData.get("profilePicture") as File | null;
-
+    // validaciones básicas
     if (!fullname || !email || !password) {
       return NextResponse.json(
         { error: "Todos los campos son obligatorios" },
         { status: 400 }
       );
     }
-
     // validaciones 
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -61,8 +60,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Subir foto 
+    //foto de perfil
     let profilePictureUrl = null;
     if (profilePicture) {
       profilePictureUrl = await uploadToCloudinary(profilePicture);

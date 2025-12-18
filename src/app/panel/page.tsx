@@ -73,11 +73,11 @@ export default function ProfilePage() {
   setError('El nombre debe tener entre 3 y 20 caracteres');
   return;
 }
-
+    // crea el form data
     const formData = new FormData();
     if (name.trim() !== session.user.name) {
-  formData.append('fullname', name.trim());
-}
+    formData.append('fullname', name.trim());
+    }
 
     if (profilePicture) {
       formData.append('profilePicture', profilePicture);
@@ -109,7 +109,7 @@ export default function ProfilePage() {
         }
         throw new Error(errorMessage);
       }
-
+      
       const result = await response.json();
       setSuccess(result.message || '¡Perfil actualizado con éxito!');
 
@@ -223,8 +223,8 @@ export default function ProfilePage() {
                 required
               />
               <p className="text-yellow-400 text-xs mt-1 text-center">
-  Puedes cambiarlo si está disponible
-</p>
+              Puedes cambiarlo si está disponible
+            </p>
 
             </div>
             <div>

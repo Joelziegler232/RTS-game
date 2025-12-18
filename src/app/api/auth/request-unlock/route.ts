@@ -77,7 +77,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    // Capturar cualquier error inesperado
     console.error("Error en request-unlock:", error);
     return NextResponse.json(
       { error: "Error al procesar la solicitud" },

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Buscar usuario que tenga ese token y que no haya expirado
     const user = await User.findOne({
       unlockToken: token,
-      unlockTokenExpires: { $gt: new Date() }, // Mayor que ahora → aún válido
+      unlockTokenExpires: { $gt: new Date() }, 
     });
 
     // Si no existe o ya expiró
@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
     // Desbloquear la cuenta
     user.isLocked = false;
     user.failedLoginAttempts = 0;
-    user.unlockToken = null;           // Eliminar token usado
-    user.unlockTokenExpires = null;    // Eliminar fecha de expiración
+    user.unlockToken = null;           
+    user.unlockTokenExpires = null;    
     await user.save();
 
     // Respuesta exitosa

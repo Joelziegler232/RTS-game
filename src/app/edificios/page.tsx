@@ -103,6 +103,7 @@ const totalPopulation = playerVillagers +
 
   const [freeVillagers, setFreeVillagers] = useState(0);
 
+  // verificar autenticación para la sesión
   useEffect(() => {
     console.log('Estado de la sesión:', { session, status });
     if (status === 'loading') return;
@@ -117,81 +118,7 @@ const totalPopulation = playerVillagers +
     return () => clearTimeout(timer);
   }, [status, router, session]);
 
-useEffect(() => {
-  const handleEnemyFound = (e: CustomEvent) => {
-    const enemy = e.detail;
-    if (!enemy) return;
-
-    console.log("Enemigo encontrado:", enemy);
-    setBattleEnemy(enemy);
-    setBattleOpen(true);
-    setBattleLoading(false);
-  };
-
-  window.removeEventListener('enemyFound', handleEnemyFound as EventListener);
-  window.addEventListener('enemyFound', handleEnemyFound as EventListener);
-
-  return () => {
-    window.removeEventListener('enemyFound', handleEnemyFound as EventListener);
-  };
-}, []);
-
-useEffect(() => {
-  const handleBattleResult = (e: any) => {
-    const report = e.detail;
-    if (!report) return;
-
-    setLastReport(report);
-    setShowResult(true);
-
-    
-    const reload = async () => {
-      if (!session?.user?.id) return;
-      try {
-        const res = await fetch(`/api/user_instance/${session.user.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUnits(data.units || []);
-          setPlayerFood(data.resources.find((r: any) => r.resource === "food")?.amount || 0);
-         // actualizar población refreshh
-          window.dispatchEvent(new CustomEvent("playerPopulationUpdate", {
-            detail: {
-              villagers: data.population.villagers,
-              soldiers: data.population.soldiers,
-              maxPopulation: data.population.maxPopulation,
-            },
-          }));
-        }
-      } catch (err) {
-        console.error("Error recargando tras batalla");
-      }
-    };
-
-    reload();
-  };
-
-  window.addEventListener("battleResult", handleBattleResult);
-  return () => window.removeEventListener("battleResult", handleBattleResult);
-}, [session?.user?.id, seenAttacks]);
-
-
-// ESCUCHAR CUANDO SE ENCUENTRA UN ENEMIGO
-useEffect(() => {
-  const handleEnemyFound = (e: any) => {
-    const enemy = e.detail;
-    if (enemy) {
-      setBattleEnemy(enemy);
-      setBattleOpen(true);
-      setIsSearching(false); // Importante: parar el loading
-    }
-  };
-
-  window.addEventListener("enemyFound", handleEnemyFound);
-  return () => window.removeEventListener("enemyFound", handleEnemyFound);
-}, []);
-
-
-
+  // Cargar datos del usuario e instancia 
   useEffect(() => {
     if (!session?.user?.id) {
       console.log('No hay session.user.id, esperando...');
@@ -199,7 +126,8 @@ useEffect(() => {
     }
 
     console.log('Cargando datos para userId:', session.user.id);
-
+    
+    // función para cargar datos del usuario e instancia
     const fetchUserData = async () => {
       try {
         const userResponse = await fetch(`/api/users/${session.user.id}`);
@@ -246,11 +174,11 @@ useEffect(() => {
             const retryResponse = await fetch(`/api/user_instance/${session.user.id}`);
             if (!retryResponse.ok) throw new Error('Error al recargar instancia creada');
 
-            // obtener datos de la instancia GET nuevamente userinstance/useridv
+            // obtener datos de la instancia GET nuevamente userinstance/userid
             const instance = await retryResponse.json();
             
-            // recibe el mapa y lo setea
-            setGameMap(instance.map.grid); // lo guarda en userinstance.map
+            // cargamos todo en el frontend
+            setGameMap(instance.map.grid); 
             setLumberCampArray([]);
             setGoldMineArray([]);
             setStoneMineArray([]);
@@ -272,97 +200,97 @@ useEffect(() => {
             setPlayerLevel(1);
 
            setUserData({
-  id: session.user.id,
-  name: session.user.name || user.fullname || '',
-  username: user.email || '',
-  password: '',
-  level: Number(instance.level),
-  obreros: Number(instance.population?.villagers) || 0,
-  aumentador: [],
-  profilePicture: session.user.profilePicture || user.profilePicture || '/default-profile.png',
+            id: session.user.id,
+            name: session.user.name || user.fullname || '',
+            username: user.email || '',
+            password: '',
+            level: Number(instance.level),
+            obreros: Number(instance.population?.villagers) || 0,
+            aumentador: [],
+            profilePicture: session.user.profilePicture || user.profilePicture || '/default-profile.png',
 
-  poblacion: instance.population?.villagers || 0,
-  poblacionLibre: instance.population?.villagers || 0, 
-  maxPoblacion: instance.population?.maxPopulation || 0,
-});
+            poblacion: instance.population?.villagers || 0,
+            poblacionLibre: instance.population?.villagers || 0, 
+            maxPoblacion: instance.population?.maxPopulation || 0,
+            });
         
-        if (instance.battleReports && instance.battleReports.length > 0) {
-          const lastReport = instance.battleReports[0];
-          const attackTime = new Date(lastReport.timestamp);
-          const hoursSinceAttack = (Date.now() - attackTime.getTime()) / (1000 * 60 * 60);
+            // muentra alerta de ataque si hubo
+            if (instance.battleReports && instance.battleReports.length > 0) {
+              const lastReport = instance.battleReports[0];
+              const attackTime = new Date(lastReport.timestamp);
+              const hoursSinceAttack = (Date.now() - attackTime.getTime()) / (1000 * 60 * 60);
 
-          if (hoursSinceAttack < 24) {
-            setLatestAttack(lastReport);
-            setShowAttackAlert(true);
-          }
-        }
-
+              if (hoursSinceAttack < 24) {
+                setLatestAttack(lastReport);
+                setShowAttackAlert(true);
+              }
+            }
             return;
           }
 
           throw new Error('Error al cargar instancia');
         }
-        
-        const instance = await instanceResponse.json();
-        console.log('Datos cargados:', instance);
+          // aca vemos si la instancia del jugador ya existía
+          const instance = await instanceResponse.json();
+          console.log('Datos cargados:', instance);
 
-        setGameMap(instance.map?.grid);
-        const ayuntamientos = instance.buildings.filter((b: any) => b.type === 'ayuntamiento');
+          //cargamos su progreso
+          setGameMap(instance.map?.grid);
+          const ayuntamientos = instance.buildings.filter((b: any) => b.type === 'ayuntamiento');
+          setLumberCampArray(instance.buildings.filter((b: any) => b.type === 'lumber'));
+          setGoldMineArray(instance.buildings.filter((b: any) => b.type === 'gold_mine'));
+          setStoneMineArray(instance.buildings.filter((b: any) => b.type === 'stone_mine'));
+          setMillArray(instance.buildings.filter((b: any) => b.type === 'mill'));
+          setHouseArray(instance.buildings.filter((b: any) => b.type === 'house'));
+          setAyuntamientoArray(instance.buildings.filter((b: any) => b.type === 'ayuntamiento'));
+          setBarracksArray(instance.buildings.filter((b: any) => b.type === 'barracks'));
+          setShipyardArray(instance.buildings.filter((b: any) => b.type === 'shipyard'));
+          setMarketArray(instance.buildings.filter((b: any) => b.type === "mercado") || []);
 
-        setLumberCampArray(instance.buildings.filter((b: any) => b.type === 'lumber'));
-        setGoldMineArray(instance.buildings.filter((b: any) => b.type === 'gold_mine'));
-        setStoneMineArray(instance.buildings.filter((b: any) => b.type === 'stone_mine'));
-        setMillArray(instance.buildings.filter((b: any) => b.type === 'mill'));
-        setHouseArray(instance.buildings.filter((b: any) => b.type === 'house'));
-        setAyuntamientoArray(instance.buildings.filter((b: any) => b.type === 'ayuntamiento'));
-        setBarracksArray(instance.buildings.filter((b: any) => b.type === 'barracks'));
-        setShipyardArray(instance.buildings.filter((b: any) => b.type === 'shipyard'));
-        setMarketArray(instance.buildings.filter((b: any) => b.type === "mercado") || []);
+          setUnits(instance.units || []);
 
-        setUnits(instance.units || []);
+          type ResourceItem = { resource: string; amount: number };
 
-        type ResourceItem = { resource: string; amount: number };
+          setPlayerGold(Number(instance.resources.find((r: ResourceItem) => r.resource === 'gold')?.amount) || 500);
+          setPlayerMoney(Number(instance.resources.find((r: ResourceItem) => r.resource === 'money')?.amount) || 5000);
+          setPlayerFood(Number(instance.resources.find((r: ResourceItem) => r.resource === 'food')?.amount) || 200);
+          setPlayerLumber(Number(instance.resources.find((r: ResourceItem) => r.resource === 'lumber')?.amount) || 200);
+          setPlayerStone(Number(instance.resources.find((r: ResourceItem) => r.resource === 'stone')?.amount) || 50);
 
-        setPlayerGold(Number(instance.resources.find((r: ResourceItem) => r.resource === 'gold')?.amount) || 500);
-        setPlayerMoney(Number(instance.resources.find((r: ResourceItem) => r.resource === 'money')?.amount) || 5000);
-        setPlayerFood(Number(instance.resources.find((r: ResourceItem) => r.resource === 'food')?.amount) || 200);
-        setPlayerLumber(Number(instance.resources.find((r: ResourceItem) => r.resource === 'lumber')?.amount) || 200);
-        setPlayerStone(Number(instance.resources.find((r: ResourceItem) => r.resource === 'stone')?.amount) || 50);
+          const villagersFromBackend = instance.population?.villagers || 0;
+          setPlayerVillagers(villagersFromBackend);
+          setFreeVillagers(villagersFromBackend); 
+          setPlayerPopulationCap(Number(instance.population?.maxPopulation) || 0);
+          setPlayerLevel(Number(instance.level) || 1); 
+          // refreshh
+          window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
+          detail: Number(instance.level) 
+          }));
 
-      const villagersFromBackend = instance.population?.villagers || 0;
-setPlayerVillagers(villagersFromBackend);
-setFreeVillagers(villagersFromBackend); 
-        setPlayerPopulationCap(Number(instance.population?.maxPopulation) || 0);
-        setPlayerLevel(Number(instance.level) || 1); 
-        // refreshh
-        window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
-  detail: Number(instance.level) 
-}));
+          setUserData({
+          id: session.user.id,
+          name: session.user.name || user.fullname || '',
+          username: user.email || '',
+          password: '',
+          level: Number(instance.level),
+          obreros: Number(instance.population?.villagers) || 0,
+          aumentador: [],
+          profilePicture: session.user.profilePicture || user.profilePicture || '/default-profile.png',
 
-        setUserData({
-  id: session.user.id,
-  name: session.user.name || user.fullname || '',
-  username: user.email || '',
-  password: '',
-  level: Number(instance.level),
-  obreros: Number(instance.population?.villagers) || 0,
-  aumentador: [],
-  profilePicture: session.user.profilePicture || user.profilePicture || '/default-profile.png',
-
-  poblacion: instance.population?.villagers || 0,
-  poblacionLibre: instance.population?.villagers || 0, 
-  maxPoblacion: instance.population?.maxPopulation || 0,
-});
-        
+          poblacion: instance.population?.villagers || 0,
+          poblacionLibre: instance.population?.villagers || 0, 
+          maxPoblacion: instance.population?.maxPopulation || 0,
+        });
+        // alerta si fue atacado
         if (instance.battleReports && instance.battleReports.length > 0) {
           const ultimoAtaque = instance.battleReports[0];
           const tiempo = new Date(ultimoAtaque.timestamp).getTime();
           const haceMenosDe24h = Date.now() - tiempo < 24 * 60 * 60 * 1000;
 
           if (haceMenosDe24h && !seenAttacks.has(ultimoAtaque._id || ultimoAtaque.timestamp)) {
-  setLatestAttack(ultimoAtaque);
-  setShowAttackAlert(true);
-}
+          setLatestAttack(ultimoAtaque);
+          setShowAttackAlert(true);
+        }
         }
 
       } catch (error) {
@@ -373,7 +301,7 @@ setFreeVillagers(villagersFromBackend);
 
     fetchUserData();
   }, [session]);
-
+  
  // ACTUALIZACIÓN AUTOMÁTICA de instancia al crear edificios o unidades
 useEffect(() => {
   // función  refreshh 1
@@ -385,7 +313,7 @@ useEffect(() => {
       .then(instance => {
         if (!instance) return;
 
-        // Solo actualizamos lo que cambió (nivel, aldeanos, edificios)
+        // Solo actualizamos lo que cambió 
         setPlayerLevel(prev => instance.level || prev || 1);
          // refreshh
         window.dispatchEvent(new CustomEvent("playerLevelUpdated", { 
@@ -408,44 +336,44 @@ useEffect(() => {
 
         // Cartel de ataque
        if (instance.battleReports && instance.battleReports.length > 0) {
-  const ultimoAtaque = instance.battleReports[0];
-  const haceMenosDe24h = Date.now() - new Date(ultimoAtaque.timestamp).getTime() < 24 * 60 * 60 * 1000;
+        const ultimoAtaque = instance.battleReports[0];
+        const haceMenosDe24h = Date.now() - new Date(ultimoAtaque.timestamp).getTime() < 24 * 60 * 60 * 1000;
 
-  if (haceMenosDe24h && !seenAttacks.has(ultimoAtaque._id || ultimoAtaque.timestamp)) {
-    setLatestAttack(ultimoAtaque);
-    setShowAttackAlert(true);
-  }
-}
-      })
-      .catch(err => console.error("Error en refreshOnAction:", err));
-  };
-  // refreshh
-  window.addEventListener("buildingPlaced", refreshOnAction);
-  window.addEventListener("villagerCreated", refreshOnAction);
-  window.addEventListener("instanceUpdated", refreshOnAction);
+        if (haceMenosDe24h && !seenAttacks.has(ultimoAtaque._id || ultimoAtaque.timestamp)) {
+          setLatestAttack(ultimoAtaque);
+          setShowAttackAlert(true);
+        }
+        }
+            })
+            .catch(err => console.error("Error en refreshOnAction:", err));
+        };
+        // refreshh
+        window.addEventListener("buildingPlaced", refreshOnAction);
+        window.addEventListener("villagerCreated", refreshOnAction);
+        window.addEventListener("instanceUpdated", refreshOnAction);
 
-  return () => {
-    window.removeEventListener("buildingPlaced", refreshOnAction);
-    window.removeEventListener("villagerCreated", refreshOnAction);
-    window.removeEventListener("instanceUpdated", refreshOnAction);
-  };
-}, [session?.user?.id, seenAttacks]);
-// === DISPARAR EVENTO CUANDO CAMBIAN LOS EDIFICIOS (para que MapBuildings se entere) ===
-useEffect(() => {
-   // refreshh
-  window.dispatchEvent(new CustomEvent("mapBuildingsRefresh"));
-}, [
-  ayuntamientoArray,
-  lumberCampArray,
-  millArray,
-  barracksArray,
-  houseArray,
-  goldMineArray,
-  stoneMineArray,
-  marketArray,
-]);
+        return () => {
+          window.removeEventListener("buildingPlaced", refreshOnAction);
+          window.removeEventListener("villagerCreated", refreshOnAction);
+          window.removeEventListener("instanceUpdated", refreshOnAction);
+        };
+      }, [session?.user?.id, seenAttacks]);
 
+  useEffect(() => {
+    // refreshh de edificios 
+    window.dispatchEvent(new CustomEvent("mapBuildingsRefresh"));
+  }, [
+    ayuntamientoArray,
+    lumberCampArray,
+    millArray,
+    barracksArray,
+    houseArray,
+    goldMineArray,
+    stoneMineArray,
+    marketArray,
+  ]);
 
+ // refreshh nivel del jugador
   useEffect(() => {
     const handleLevelUpdate = (e: any) => {
       setPlayerLevel(e.detail);
@@ -458,7 +386,7 @@ useEffect(() => {
     };
   }, []);
 
-  
+  // refreshh gasto de recursos al colocar edificios
   useEffect(() => {
     const handler = async (e: any) => {
       const cost = e?.detail?.cost || pendingBuildCost;
@@ -514,7 +442,6 @@ useEffect(() => {
     session?.user?.id,
   ]);
 
- 
 // Producción de recursos por segundo
 // generadoresss 3
 useEffect(() => {
@@ -527,6 +454,7 @@ useEffect(() => {
     let stonePerSec = 0;
     let foodPerSec = 0;
     // recorre todos los edificios generadoresss 4
+    // calcula la producción por segundo y se incrementa en los recursos del jugador
     goldMineArray.forEach(m => {
       const base = m.produccion_hora || 0;
       const workers = m.obreros || 0;
@@ -562,11 +490,11 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, [session, goldMineArray, stoneMineArray, millArray, lumberCampArray]);
 
-// Guardar recursos al cerrar pestaña
+// aca guarda los recursos cada 2 min
 useEffect(() => {
   const saveResources = () => {
     if (!session?.user?.id) return;
-
+    // le pedimos al backend que actualice los recursos de la instancia del usuario
     fetch(`/api/user_instance/${session.user.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -583,15 +511,14 @@ useEffect(() => {
   };
   // Guardado automático cada 2 minutos refreshh
   const saveInterval = setInterval(saveResources, 120000);
-
   window.addEventListener('beforeunload', saveResources);
-
   return () => {
     clearInterval(saveInterval);
     window.removeEventListener('beforeunload', saveResources);
   };
 }, [session, playerGold, playerLumber, playerStone, playerFood, playerMoney]);
 
+// actualiza datos despues de batallas
 useEffect(() => {
   const handleBattleResult = async (e: any) => {
     const report = e.detail;
@@ -628,30 +555,28 @@ useEffect(() => {
       setPlayerMoney(r.find((x: any) => x.resource === "money")?.amount || 0);
 
       setLumberCampArray(freshData.buildings?.filter((b: any) => b.type === "lumber") || []);
-setGoldMineArray(freshData.buildings?.filter((b: any) => b.type === "gold_mine") || []);
-setStoneMineArray(freshData.buildings?.filter((b: any) => b.type === "stone_mine") || []);
-setMillArray(freshData.buildings?.filter((b: any) => b.type === "mill") || []);
-setHouseArray(freshData.buildings?.filter((b: any) => b.type === "house") || []);
-setAyuntamientoArray(freshData.buildings?.filter((b: any) => b.type === "ayuntamiento") || []);
-setBarracksArray(freshData.buildings?.filter((b: any) => b.type === "barracks") || []);
-setShipyardArray(freshData.buildings?.filter((b: any) => b.type === "shipyard") || []);
-setMarketArray(freshData.buildings?.filter((b: any) => b.type === "mercado") || []);
-
+      setGoldMineArray(freshData.buildings?.filter((b: any) => b.type === "gold_mine") || []);
+      setStoneMineArray(freshData.buildings?.filter((b: any) => b.type === "stone_mine") || []);
+      setMillArray(freshData.buildings?.filter((b: any) => b.type === "mill") || []);
+      setHouseArray(freshData.buildings?.filter((b: any) => b.type === "house") || []);
+      setAyuntamientoArray(freshData.buildings?.filter((b: any) => b.type === "ayuntamiento") || []);
+      setBarracksArray(freshData.buildings?.filter((b: any) => b.type === "barracks") || []);
+      setShipyardArray(freshData.buildings?.filter((b: any) => b.type === "shipyard") || []);
+      setMarketArray(freshData.buildings?.filter((b: any) => b.type === "mercado") || []);
        // refreshh
       window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: freshData }));
+      } catch (err) {
+        console.error("Error recargando tras batalla:", err);
+      }
+      // refreshh
+      window.dispatchEvent(new CustomEvent("showBattleReport", { detail: report }));
+    };
+      window.addEventListener("battleResult", handleBattleResult);
+      return () => window.removeEventListener("battleResult", handleBattleResult);
+    }, [session?.user?.id, seenAttacks]);
 
-    } catch (err) {
-      console.error("Error recargando tras batalla:", err);
-    }
 
-     // refreshh
-    window.dispatchEvent(new CustomEvent("showBattleReport", { detail: report }));
-  };
-
-  window.addEventListener("battleResult", handleBattleResult);
-  return () => window.removeEventListener("battleResult", handleBattleResult);
-}, [session?.user?.id, seenAttacks]);
-// CARGAR ATAQUES YA VISTOS DEL LOCALSTORAGE
+// CARGAR ATAQUES YA VISTOS para que no salga a cada rato el cartel
 useEffect(() => {
   const saved = localStorage.getItem("seenAttacks");
   if (saved) {
@@ -659,9 +584,66 @@ useEffect(() => {
   }
 }, []);
 
-// =============================
-//  SINCRONIZACIÓN TOTAL CON BACKEND
-// =============================
+// manejar evento de enemigo encontrado
+useEffect(() => {
+  const handleEnemyFound = (e: CustomEvent) => {
+    const enemy = e.detail;
+    if (!enemy) return;
+
+    console.log("Enemigo encontrado:", enemy);
+    setBattleEnemy(enemy);
+    setBattleOpen(true);
+     setIsSearching(false);  
+  };
+
+  window.removeEventListener('enemyFound', handleEnemyFound as EventListener);
+  window.addEventListener('enemyFound', handleEnemyFound as EventListener);
+
+  return () => {
+    window.removeEventListener('enemyFound', handleEnemyFound as EventListener);
+  };
+}, []);
+
+// actualizar datos despues de batallas
+useEffect(() => {
+  const handleBattleResult = (e: any) => {
+    const report = e.detail;
+    if (!report) return;
+
+    setLastReport(report);
+    setShowResult(true);
+
+    // función para recargar datos del jugador
+    const reload = async () => {
+      if (!session?.user?.id) return;
+      try {
+        const res = await fetch(`/api/user_instance/${session.user.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUnits(data.units || []);
+          setPlayerFood(data.resources.find((r: any) => r.resource === "food")?.amount || 0);
+         // actualizar población refreshh
+          window.dispatchEvent(new CustomEvent("playerPopulationUpdate", {
+            detail: {
+              villagers: data.population.villagers,
+              soldiers: data.population.soldiers,
+              maxPopulation: data.population.maxPopulation,
+            },
+          }));
+        }
+      } catch (err) {
+        console.error("Error recargando tras batalla");
+      }
+    };
+
+    reload();
+  };
+
+  window.addEventListener("battleResult", handleBattleResult);
+  return () => window.removeEventListener("battleResult", handleBattleResult);
+}, [session?.user?.id, seenAttacks]);
+
+//  SINCRONIZACIÓN CON BACKEND
 useEffect(() => {
   // refreshh
   // función para actualizar todos los datos desde el backend
@@ -691,19 +673,17 @@ useEffect(() => {
     setPlayerGold(data.resources?.find((r: any) => r.resource === "gold")?.amount || 0);
     setPlayerLumber(data.resources?.find((r: any) => r.resource === "lumber")?.amount || 0);
     setPlayerStone(data.resources?.find((r: any) => r.resource === "stone")?.amount || 0);
-  };
+    };
 
-  window.addEventListener("instanceUpdated", updateFromBackend);
-  return () => window.removeEventListener("instanceUpdated", updateFromBackend);
-}, []);
+    window.addEventListener("instanceUpdated", updateFromBackend);
+    return () => window.removeEventListener("instanceUpdated", updateFromBackend);
+  }, []);
 
-  // =============================
-  //        BUILDING HANDLER
-  // =============================
+  // abrimos ventana que muestra los edificios
   const handleOpenDrawer = () => setDrawerOpen(true);
   const handleCloseDrawer = () => setDrawerOpen(false);
 
-  // recibe costo de los edificiosss 2
+  // recibe costo de los edificiosss 2 para verificar si hay recursosss
  const handleBuild = useCallback((cost: {
   gold?: number;
   money?: number;
@@ -747,48 +727,41 @@ useEffect(() => {
   ayuntamientoArray.length
 ]);
 
+// función para buscar batalla
 const searchBattle = async () => {
   if (isSearching) return;
   if (soldierCount === 0) {
     alert("Necesitas al menos 1 soldado para buscar batalla");
     return;
   }
-
   setIsSearching(true);
   setBattleEnemy(null);
   setBattleOpen(false);
-
   try {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-
     // ← ENVÍAMOS EL ID DEL ÚLTIMO ENEMIGO PARA EXCLUIRLO
     if (battleEnemy?.userId) {
       headers["x-last-enemy-id"] = battleEnemy.userId;
     }
-
+    // hacemos la petición al backend
     const res = await fetch('/api/battle/find', {
       method: 'POST',
       headers,
       body: JSON.stringify({ userId: session?.user?.id })
     });
-
     const data = await res.json();
-
     if (!res.ok) {
       alert(data.error || "Error buscando enemigo");
       return;
     }
-
     if (!data.enemy) {
       alert("No hay enemigos disponibles en este momento");
       return;
     }
-
     setBattleEnemy(data.enemy);
     setBattleOpen(true);
-
   } catch (err) {
     console.error(err);
     alert("Error de conexión");
@@ -796,22 +769,19 @@ const searchBattle = async () => {
     setIsSearching(false);
   }
 };
-
+  // este nos lleva al perfil del jugador
   const handleProfileClick = () => {
     router.push('/welcome');
   };
-
   if (status === 'loading') {
     return <div className="container mx-auto text-center text-white">Cargando...</div>;
   }
-
+// funcion para el ataque
  const handleAttack = async () => {
   if (!battleEnemy || !session?.user?.id) return;
   setBattleLoading(true);
-
   try {
     const soldiersToSend = units.filter(u => u.type === 'soldier').length;
-
     const res = await fetch('/api/battle/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -821,22 +791,16 @@ const searchBattle = async () => {
         troops: { soldiers: soldiersToSend }
       })
     });
-
     const data = await res.json();
-
     if (!res.ok) {
       alert(data.error || 'Error al iniciar batalla');
       setBattleLoading(false);
       return;
     }
-
      // refreshh
     window.dispatchEvent(new CustomEvent('battleResult', { detail: data.report }));
-
-   
     setBattleOpen(false);
     setBattleEnemy(null);
-
   } catch (err) {
     console.error('handleAttack error:', err);
     alert('Error al atacar.');
@@ -845,14 +809,10 @@ const searchBattle = async () => {
   }
 };
 
-
-
   return (
     <main className={`${styles.main} min-h-screen relative`}>
 
-      {/* =============================
-          PERFIL (AVATAR)
-      ============================= */}
+      {/* PERFIL*/}
       <div className={styles.profileAvatar} onClick={handleProfileClick}>
         {session?.user?.profilePicture ? (
           <Image
@@ -867,8 +827,7 @@ const searchBattle = async () => {
         )}
       </div>
 
-      {/* =============================
-          RESOURCE BAR
+      {/* RESOURCE BAR
       // aca se muentra las unidadesss y recursosss */}
       <div className={styles.resourceBar}>
       <div className={styles.populationItem}>
@@ -892,9 +851,7 @@ const searchBattle = async () => {
       </div>
 
 
-      {/* =============================
-          MENÚ DE CREACIÓN (AYUNTAMIENTO)
-      ============================= */}
+      {/* MENÚ DE CREACIÓN */}
       {ayuntamientoMenu && (
         <CreacionMenu
           user={userData}
@@ -916,9 +873,7 @@ const searchBattle = async () => {
         />
         )}
 
-      {/* =============================
-          BARRA DE PROGRESO 
-      ============================= */}
+      {/* BARRA DE PROGRESO  */}
       {progressBar && (
         <Progressbar
           running={progressBar}
@@ -934,9 +889,7 @@ const searchBattle = async () => {
         />
       )}
 
-      {/* =============================
-          MAPA + EDIFICIOS + UNIDADES
-      ============================= */}
+      {/* MAPA + EDIFICIOS + UNIDADES */}
       <MapBuildings
         setAyuntamientoMenu={setAyuntamientoMenu}
         ayunMenu={ayuntamientoMenu}
@@ -976,8 +929,7 @@ const searchBattle = async () => {
         playerLevel={playerLevel}
 
       />
-
-
+      {/* MODAL DE BATALLA*/}
       <BattleModal
         open={battleOpen}
         onClose={() => {
@@ -986,7 +938,7 @@ const searchBattle = async () => {
         }}
         enemy={battleEnemy}
         onAttack={handleAttack}
-        loading={battleLoading}
+        loading={isSearching} 
         onSearchAgain={() => {
           setBattleOpen(false);
           setBattleEnemy(null);
@@ -995,9 +947,7 @@ const searchBattle = async () => {
       />
 
 
-      {/* =============================
-          CONSTRUCCIÓN DE EDIFICIOS
-      ============================= */}
+      {/* CONSTRUCCIÓN DE EDIFICIOS */}
       <Container className={`fixed ${styles.uiContainer}`}>
         <div className={styles.buildButtonWrapper}>
           <Button
@@ -1017,8 +967,6 @@ const searchBattle = async () => {
             transition={{ type: "spring", stiffness: 120, damping: 15 }}
             className="relative bg-gradient-to-b from-red-900 via-black to-red-950 border-8 border-red-600 rounded-3xl p-12 max-w-3xl text-center shadow-2xl"
           >
-            
-
             <h1 className="text-8xl font-black text-red-500 mb-10 drop-shadow-2xl">
               ¡FUISTE ATACADO!
             </h1>
@@ -1060,15 +1008,16 @@ const searchBattle = async () => {
                 setSeenAttacks(updatedSeen);
                 localStorage.setItem("seenAttacks", JSON.stringify(Array.from(updatedSeen)));
               }
-            }}
-            className="mt-12 px-24 py-8 bg-red-700 hover:bg-red-600 text-white text-5xl font-black rounded-full shadow-2xl transition-all transform hover:scale-110"
-          >
-            CERRAR
-          </button>
-                    </motion.div>
-                  </div>
-                )}
+              }}
+              className="mt-12 px-24 py-8 bg-red-700 hover:bg-red-600 text-white text-5xl font-black rounded-full shadow-2xl transition-all transform hover:scale-110"
+              >
+              CERRAR
+            </button>
+              </motion.div>
+              </div>
+            )}
 
+          {/* RESULTADO DE BATALLA */}
           <BattleResultModal
             open={showResult}
             report={lastReport}
@@ -1077,6 +1026,7 @@ const searchBattle = async () => {
               setLastReport(null);
             }}
           />
+          
           {/*edificiosss */}
           <BuildDrawer
             open={drawerOpen}
@@ -1089,9 +1039,7 @@ const searchBattle = async () => {
         </div>
       </Container>
 
-      {/* =============================
-          ÍCONO DE MENSAJES
-      ============================= */}
+      {/* ÍCONO DE MENSAJES */}
       <MessageIcon />
     </main>
   );

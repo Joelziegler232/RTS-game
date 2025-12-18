@@ -3,14 +3,13 @@
 import { useState, useEffect, FormEvent, Suspense } from "react";  // ← Añade Suspense aquí
 import { useRouter, useSearchParams } from "next/navigation";
 
-// Componente interno con el hook (igual que UnlockForm)
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();  // ← Hook aquí
+  const searchParams = useSearchParams();  
   const token = searchParams.get("token");
 
   useEffect(() => {
@@ -30,11 +29,13 @@ function ResetPasswordForm() {
     }
 
     try {
+      // Realizar la petición a la API para restablecer la contraseña
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
       });
+      
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Error al restablecer la contraseña");
@@ -102,7 +103,6 @@ function ResetPasswordForm() {
   );
 }
 
-// ← Wrapper con Suspense INTERNO (igual que en UnlockAccount)
 export default function ResetPassword() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Procesando token...</div>}>

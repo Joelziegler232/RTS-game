@@ -13,7 +13,7 @@ interface ExtendedJWT extends JWT {
     profilePicture?: string | null;
   };
 }
-// configuracion de nextauthss para iniciooo de sesión con credenciales
+// configuracionpara iniciooo de sesión con credenciales
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -22,6 +22,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email', placeholder: 'jsmith@example.com' },
         password: { label: 'Password', type: 'password', placeholder: '*******' },
       },
+      // función de autorización para inicio de sesión 
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Por favor proporciona un email y contraseña válidos');
@@ -34,7 +35,7 @@ export const authOptions: NextAuthOptions = {
         if (!user) throw new Error('Email o contraseña inválidos');
         if (user.isLocked) throw new Error('Tu cuenta está bloqueada');
 
-        // verifica la contraseña
+        // verifica la contraseña comparandola con el hash almacenado
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
           user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;

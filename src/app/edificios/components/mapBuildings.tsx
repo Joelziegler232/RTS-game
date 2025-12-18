@@ -50,8 +50,6 @@ interface MapBuildingsProps {
   progressBar: boolean | null;
 }
 
-
-
 interface UnitData {
   id: string;
   type: string;
@@ -62,7 +60,6 @@ interface UnitData {
 export default function MapBuildings({
   freeVillagers,
   playerLevel,
-
   // Menús
   setAyuntamientoMenu,
   ayunMenu,
@@ -99,9 +96,7 @@ export default function MapBuildings({
   units,
   setUnits,
 }: MapBuildingsProps) {
-// ------------------------------
 // Estados del componente
-// ------------------------------
 const [showResult, setShowResult] = useState(false);
 const [lastReport, setLastReport] = useState<any>(null);
 const [visibleBuildingDetails, setVisibleBuildingDetails] = useState(false);
@@ -112,7 +107,7 @@ const [trainingSoldier, setTrainingSoldier] = useState<{
   progress: number;
 } | null>(null);
 
-// ESTADO LOCAL PARA EDIFICIOS (esto es la magia)
+// ESTADO LOCAL PARA EDIFICIOS
 const [localBuildings, setLocalBuildings] = useState({
   ayuntamiento: ayuntamientoArray,
   lumber: lumberCampArray,
@@ -123,7 +118,7 @@ const [localBuildings, setLocalBuildings] = useState({
   stoneMine: stoneMineArray,
   market: marketArray,
 });
-// SINCRONIZA LOS EDIFICIOS AL INSTANTE SIN RECARGAR
+// SINCRONIZA LOS EDIFICIOS AL INSTANTE 
 useEffect(() => {
   setLocalBuildings({
     ayuntamiento: ayuntamientoArray,
@@ -146,10 +141,7 @@ useEffect(() => {
   marketArray,
 ]);
 
-
-// ------------------------------
-// Referencias de Three.js
-// ------------------------------
+// Referencias de Three.js para el dibujo del mapa
 const mountRef = useRef<HTMLDivElement | null>(null);
 const sceneRef = useRef<THREE.Scene>(new THREE.Scene());
 const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -157,25 +149,20 @@ const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 const raycaster = useRef(new THREE.Raycaster());
 const mouse = useRef(new THREE.Vector2());
 
-// ------------------------------
 // Contadores derivados
-// ------------------------------
 const soldierCount = units.filter(u => u.type === "soldier").length;
 
 // SINCRONIZA SIN RECARGAR
 useEffect(() => {
   const handleInstanceUpdate = (event: any) => {
     const data = event.detail;
-
-    // aca se actualizan las unidadesss
+    // aca se actualizan las unidadesss los edificiosss y nivel
     if (data.units) {
       setUnits(data.units);
     }
-    
     if (data.buildings) {
       setBarracksArray(data.buildings.filter((b: any) => b.type === "barracks"));
     }
-
     if (data.level !== undefined) {
       user.level = data.level;
     }
@@ -185,22 +172,15 @@ useEffect(() => {
   return () => window.removeEventListener("instanceUpdated", handleInstanceUpdate);
 }, []);
 
-// ------------------------------
-// Funciones
-// ------------------------------
+// recarga los datos del jugador manualmente
 async function reloadPlayerData() {
   const res = await fetch(`/api/user_instance/${user.id}`);
   const data = await res.json();
-
-  // Actualizar unidadesss
   setUnits(data.units || []);
-
-  // Actualizar comida
   setPlayerFood(
     data.resources.find((r: any) => r.resource === "food")?.amount || 0
   );
 
-  // Actualizar población para el HUD
   window.dispatchEvent(
     new CustomEvent("playerPopulationUpdate", {
       detail: {
@@ -212,9 +192,7 @@ async function reloadPlayerData() {
   );
 }
 
-// ------------------------------
 // Estados adicionales y referencias
-// ------------------------------
 const [visibleAyuntamientoDetails, setVisibleAyuntamientoDetails] = useState(false);
 const [ayuntamientoInfo, setAyuntamientoInformation] = useState<Structure | null>(null);
 const [buildingInformation, setBuildingInformation] = useState<Generadores | null>(null);
@@ -224,18 +202,14 @@ const previousMousePosition = useRef({ x: 0, y: 0 });
 const highlightMeshRef = useRef<THREE.Mesh | null>(null);
 
 
-// ------------------------------
 // useEffect: cerrar menú de generadores
-// ------------------------------
 useEffect(() => {
   const closeMenu = () => setVisibleBuildingDetails(false);
   window.addEventListener("closeBuildingMenu", closeMenu);
   return () => window.removeEventListener("closeBuildingMenu", closeMenu);
 }, []);
 
-// ------------------------------
 // useEffect: cerrar menú de cuarteles
-// ------------------------------
 useEffect(() => {
   const closeBarracks = () => {
     setVisibleBarracksDetails(false);
@@ -245,9 +219,7 @@ useEffect(() => {
   return () => window.removeEventListener("closeBuildingMenu", closeBarracks);
 }, []);
 
-// ------------------------------
-// Función para abrir detalles de generadores
-// ------------------------------
+// Función para abrir detalles de generadores al hacer click
 const generadorData = useCallback(
   (id: number) => {
     const built = [
@@ -284,6 +256,8 @@ const generadorData = useCallback(
   },
   [localBuildings, visibleBuildingDetails, buildingInformation]
 );
+
+// Función para abrir detalles de cuarteles al hacer click
 const barracksMenu = useCallback(
   (id: number) => {
     const cuartel = localBuildings.barracks.find((b) => b.id === id);
@@ -303,13 +277,12 @@ const barracksMenu = useCallback(
   [localBuildings.barracks, visibleBarracksDetails, barracksInformation]
 );
 
-
+// Función para abrir detalles del ayuntamiento al hacer click
   const ayuntamientoMenu = useCallback(
   (id: number) => {
     const ayuntamiento = localBuildings.ayuntamiento.find((b) => b.id === id);
     if (!ayuntamiento) return;
 
-    // Si ya está abierto el menú del mismo ayuntamiento → cerrarlo
     if (ayunMenu && ayuntamientoInfo?.id === id) {
       setAyuntamientoMenu(false);
       setVisibleAyuntamientoDetails(false);
@@ -317,13 +290,13 @@ const barracksMenu = useCallback(
       return;
     }
 
-    // Abrir menú
     setAyuntamientoInformation(ayuntamiento);
     setVisibleAyuntamientoDetails(true);
     setAyuntamientoMenu(true);
   },
   [localBuildings.ayuntamiento, ayunMenu, ayuntamientoInfo?.id]
 );
+
   // dibujo del mapsss 4 con three.js
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -567,10 +540,7 @@ const barracksMenu = useCallback(
         );
         sprite.scale.set(2, 2, 1);
         sprite.userData = { id: building.id, type: building.type };
-        scene.add(sprite);
-
-        
-        
+        scene.add(sprite); 
       });
 
         const animate = () => {
@@ -625,7 +595,7 @@ const barracksMenu = useCallback(
     };
   }, [gameMap]);
 
-  // Texturas cargadas UNA sola vez
+  // Texturas cargadas UNA sola vez para optimización
 const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
 
   const updateHighlight = (tileX: number, tileY: number, isValid: boolean) => {
@@ -646,6 +616,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
     sceneRef.current.add(highlightMeshRef.current);
   };
 
+// Manejo de eventos del mouse para cámara y colocación de edificios
   const handleMouseDown = useCallback(
     (event: MouseEvent) => {
       
@@ -658,6 +629,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
     [isDraggingCamera, draggingBuilding]
   );
 
+// movimiento del mouse
   const handleMouseMove = useCallback(
     (event: MouseEvent) => {
       mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -739,6 +711,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
   );
 
   // colocamos edificiosss en el mapa 3
+  // al soltar el mouse colocamos el edificio
   const handleMouseUp = useCallback(
     async (event: MouseEvent) => {
      
@@ -860,7 +833,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
                   
                 });
 
-                                if (!response.ok) {
+                  if (!response.ok) {
                   const err = await response.json();
                   alert(err.error || "No se pudo construir el edificio");
                   sceneRef.current.remove(draggingBuilding);
@@ -876,7 +849,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
                 // obtener datos actualizados del backend de edificiosss
                 const data = await response.json();
 
-                // ACTUALIZAR RECURSOS (esto ya lo tenías)
+                // ACTUALIZAR RECURSOS DEL JUGADOR
                 await fetch(`/api/user_instance/${user.id}`, {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
@@ -903,8 +876,7 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
 
                  // refreshh
                 window.dispatchEvent(new CustomEvent("buildingPlaced"));
-
-                // ENCONTRAR EL EDIFICIO QUE ACABÁS DE CONSTRUIR (con el ID del backend)
+                
                 const nuevoEdificio = data.buildings.find((b: any) => 
                   b.position?.x === tileX && b.position?.y === tileY
                 );
@@ -916,8 +888,8 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
                   permanentSprite.position.copy(draggingBuilding.position);
                   permanentSprite.scale.set(2, 2, 1);
                   permanentSprite.userData = { 
-                    id: nuevoEdificio.id,      // ID CORRECTO DEL BACKEND
-                    type: nuevoEdificio.type   // TIPO CORRECTO
+                    id: nuevoEdificio.id,      
+                    type: nuevoEdificio.type   
                   };
                   sceneRef.current.add(permanentSprite);
                 }
@@ -1018,6 +990,8 @@ const texturesRef = useRef<{ [key: string]: THREE.Texture }>({});
       setStructure,
     ]
   );
+
+  // al hacer click en edificiosss para abrir menús
 const handleClick = useCallback(
   (event: MouseEvent) => {
     if (draggingBuilding || !cameraRef.current || !sceneRef.current) return;
@@ -1047,6 +1021,7 @@ const handleClick = useCallback(
   [draggingBuilding, ayuntamientoMenu, generadorData, barracksMenu]
 );
 
+// zoom con la rueda del mouse
   const handleWheel = useCallback((event: WheelEvent) => {
     if (cameraRef.current) {
       cameraRef.current.position.y += event.deltaY * 0.1;
@@ -1054,8 +1029,7 @@ const handleClick = useCallback(
     }
   }, []);
 
-  
-
+  // agregar y quitar los eventos del mouse
   useEffect(() => {
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
@@ -1073,9 +1047,8 @@ const handleClick = useCallback(
       window.removeEventListener('contextmenu', (e) => e.preventDefault());
     };
   }, [handleMouseDown, handleMouseMove, handleMouseUp, handleClick, handleWheel]);
-
   
-  
+  // crear y eliminar el sprite del edificio que se arrastra
   useEffect(() => {
     if (structure !== null && !draggingBuilding && sceneRef.current) {
       const textureLoader = new THREE.TextureLoader();
@@ -1108,6 +1081,7 @@ const handleClick = useCallback(
     }
   }, [structure, draggingBuilding]);
 
+// funcion para asignar aldeanos a los edificiosss
 const assignVillager = async (buildingId: number) => {
   try {
     const response = await fetch(`/api/user_instance/${user.id}`, {
@@ -1128,13 +1102,13 @@ const assignVillager = async (buildingId: number) => {
 
      // refreshh
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updatedInstance }));
-
   } catch (err) {
     console.error(err);
     alert("No hay aldeanos disponibles o límite alcanzado");
   }
 };
 
+// funcion para remover aldeanos de los edificiosss
 const removeVillager = async (buildingId: number) => {
   try {
     const response = await fetch(`/api/user_instance/${user.id}`, {
@@ -1153,7 +1127,6 @@ const removeVillager = async (buildingId: number) => {
     setMillArray(updatedInstance.buildings.filter((b: any) => b.type === "mill"));
      // refreshh
     window.dispatchEvent(new CustomEvent("instanceUpdated", { detail: updatedInstance }));
-
   } catch (err) {
     console.error(err);
     alert("No hay aldeanos asignados para quitar");
@@ -1197,7 +1170,7 @@ const trainSoldier = async (buildingId: number) => {
   }, interval);
 };
 
-
+// funcion para finalizar el entrenamiento de soldadosss 2
 const finishTraining = async (buildingId: number) => {
   try {
     const cuartel = barracksArray.find(b => b.id === buildingId);
@@ -1236,13 +1209,12 @@ const finishTraining = async (buildingId: number) => {
   }
 };
 
-
+// funcion para buscar batalla contra otros jugadoresss
 const searchBattle = async () => {
   if (soldierCount === 0) {
     alert("No tienes soldados");
     return;
   }
-
   try {
     const res = await fetch('/api/battle/find', {
       method: 'POST',
@@ -1251,7 +1223,6 @@ const searchBattle = async () => {
     });
 
     const data = await res.json();
-
    
     if (!res.ok) {
       alert(data.error || "Error buscando enemigo");
@@ -1271,8 +1242,6 @@ const searchBattle = async () => {
     alert("Error buscando batalla");
   }
 };
-
-
 
 const generadorActualizado: Generadores | null =
   buildingInformation &&
